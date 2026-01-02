@@ -28,7 +28,9 @@ public partial class MainMenuController : Control
 
     private void OnDrivingRangePressed()
     {
-        GetTree().ChangeSceneToFile("res://Scenes/Levels/DrivingRange.tscn");
+        // Redirecting to TerrainTest for development
+        // GetTree().ChangeSceneToFile("res://Scenes/Levels/DrivingRange.tscn");
+        GetTree().ChangeSceneToFile("res://Scenes/Levels/TerrainTest.tscn");
     }
 
     private void OnPuttingRangePressed()

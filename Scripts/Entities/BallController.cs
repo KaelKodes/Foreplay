@@ -88,7 +88,7 @@ public partial class BallController : RigidBody3D
         _settleTimer = 0.0f;
         Freeze = true;
         float total = _launchPos.DistanceTo(new Vector3(GlobalPosition.X, _launchPos.Y, GlobalPosition.Z));
-        EmitSignal(SignalName.BallSettled, total * METERS_TO_YARDS);
+        EmitSignal(SignalName.BallSettled, total * 2.0f); // Restore 2.0x Visual Scale
     }
 
     public void Launch(Vector3 velocity, Vector3 spin)
@@ -127,8 +127,11 @@ public partial class BallController : RigidBody3D
         }
 
 
-        // 2. Aerodynamics (LIFT only airborne, DRAG always)
+        // Aerodynamics (LIFT only airborne, DRAG always)
         ApplyAerodynamics(state, !onGround);
+
+        // ALWAYS apply gravity if custom integrator is on
+        state.LinearVelocity += state.TotalGravity * dt;
 
         if (onGround)
         {
@@ -137,7 +140,7 @@ public partial class BallController : RigidBody3D
             {
                 _hasCarried = true;
                 float carry = _launchPos.DistanceTo(new Vector3(pos.X, _launchPos.Y, pos.Z));
-                EmitSignal(SignalName.BallCarried, carry * METERS_TO_YARDS);
+                EmitSignal(SignalName.BallCarried, carry * 2.0f); // Restore 2.0x Visual Scale
                 _state = BallState.Rolling;
             }
 
@@ -147,11 +150,6 @@ public partial class BallController : RigidBody3D
                 ApplyRollingFriction(state, result);
             }
         }
-        else
-        {
-            // Apply Gravity in air
-            state.LinearVelocity += state.TotalGravity * dt;
-        }
     }
 
     private void ApplyRollingFriction(PhysicsDirectBodyState3D state, Godot.Collections.Dictionary result)
@@ -160,9 +158,39 @@ public partial class BallController : RigidBody3D
         float resistance = 4.0f; // Base deceleration (m/s^2)
 
         Node collider = (Node)result["collider"];
-        if (collider != null && collider.Name.ToString().ToLower().Contains("rough"))
+        if (collider != null)
         {
-            resistance = 12.0f; // Rapid stop in rough
+            string cName = collider.Name.ToString().ToLower();
+
+            // 1. Check for Surveyed Terrain
+            if (collider is SurveyedTerrain terrain)
+            {
+                switch (terrain.TerrainType)
+                {
+                    case 0: resistance = 4.5f; break;   // Fairway
+                    case 1: resistance = 15.0f; break;  // Rough
+                    case 2: resistance = 35.0f; break;  // Deep Rough
+                    case 3: resistance = 2.5f; break;   // Green
+                    case 4: resistance = 150.0f; break; // Sand (Instant stop)
+                    case 5: // Water
+                        StopBall();
+                        GD.Print("Ball landed in Water! Water Hazard.");
+                        return;
+                }
+            }
+            // 2. Fallback for default grounds
+            else if (cName.Contains("rough"))
+            {
+                resistance = 12.0f;
+            }
+            else if (cName.Contains("green"))
+            {
+                resistance = 2.5f;
+            }
+            else if (cName.Contains("fairway"))
+            {
+                resistance = 4.5f;
+            }
         }
 
         Vector3 vel = state.LinearVelocity;
@@ -257,7 +285,7 @@ public partial class BallController : RigidBody3D
         LinearVelocity = Vector3.Zero;
         AngularVelocity = Vector3.Zero;
         _spinVector = Vector3.Zero;
-        GlobalPosition = new Vector3(0, 0.25f, 0);
+        GlobalPosition = new Vector3(49.51819f, 1.0f, -59.909077f);
         Freeze = false; // Let it fall/settle naturally like first load!
         _hasCarried = false;
         _flightTimer = 0.0f;

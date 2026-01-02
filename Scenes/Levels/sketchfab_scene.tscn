@@ -1,0 +1,11 @@
+[gd_scene load_steps=2 format=3 uid="uid://dxy8wm3rclnag"]
+
+[ext_resource type="PackedScene" uid="uid://gskqra84emcx" path="res://Assets/Textures/golf_cart_various/scene.gltf" id="1_56ct7"]
+
+[node name="Sketchfab_Scene" instance=ExtResource("1_56ct7")]
+
+[node name="Cart 3" parent="Sketchfab_model/1a005e88f57e44208ed4f962e605868a_fbx/RootNode" index="1"]
+transform = Transform3D(3.1838882, 0, 0, 0, -1.9407885, 11.534985, 0, -2.5239825, -8.869698, 378.0616, 88.43723, 202.57314)
+
+[node name="Cart 2" parent="Sketchfab_model/1a005e88f57e44208ed4f962e605868a_fbx/RootNode" index="2"]
+transform = Transform3D(0.5, 0, 0, 0, -0.40094042, 1.365251, 0, -0.298742, -1.8322978, 1460.7502, 88.43723, 202.57314)

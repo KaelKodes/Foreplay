@@ -4,10 +4,12 @@ using System;
 public enum PlayerState
 {
     Idle,       // Walking / Roaming
-    Golfing     // Aiming / Swinging
+    Golfing,    // Aiming / Swinging
+    Driving,    // In a vehicle
+    Surveying   // Placing points for terrain
 }
 
-public partial class PlayerController : Node3D
+public partial class PlayerController : CharacterBody3D
 {
     [Export] public float RotationSpeed = 1.0f;
     [Export] public float MoveSpeed = 5.0f;
@@ -23,7 +25,7 @@ public partial class PlayerController : Node3D
     // Multiplayer Properties
     [Export] public int PlayerIndex { get; set; } = 0; // 0=Blue, 1=Red, 2=Green, 3=Yellow
     public bool IsLocal { get; set; } = true;
-    private PlayerState _currentState = PlayerState.Golfing;
+    private PlayerState _currentState = PlayerState.Idle;
     public PlayerState CurrentState
     {
         get => _currentState;
@@ -38,6 +40,7 @@ public partial class PlayerController : Node3D
     private MeshInstance3D _avatarMesh;
     private SwingSystem _swingSystem;
     private MeshInstance3D _facingArrow;
+    private GolfCart _currentCart;
 
     public override void _Ready()
     {
@@ -104,6 +107,14 @@ public partial class PlayerController : Node3D
         {
             HandleWalkingInput(delta);
         }
+        else if (CurrentState == PlayerState.Driving)
+        {
+            HandleDrivingInput(delta);
+        }
+        else if (CurrentState == PlayerState.Surveying)
+        {
+            HandleSurveyingInput(delta);
+        }
     }
 
     private void HandleGolfingInput(double delta)
@@ -139,16 +150,19 @@ public partial class PlayerController : Node3D
         if (_camera == null) return;
 
         // Gravity
-        if (!_isGrounded)
+        if (!IsOnFloor())
         {
             _velocity.Y -= Gravity * (float)delta;
         }
+        else
+        {
+            _velocity.Y = 0;
+        }
 
         // Jump
-        if (_isGrounded && Input.IsActionJustPressed("ui_accept")) // Space check
+        if (IsOnFloor() && Input.IsActionJustPressed("ui_accept"))
         {
             _velocity.Y = JumpForce;
-            _isGrounded = false;
         }
 
         // Movement
@@ -184,27 +198,20 @@ public partial class PlayerController : Node3D
             _velocity.Z = Mathf.MoveToward(_velocity.Z, 0, MoveSpeed * 5.0f * (float)delta);
         }
 
-        // Apply Velocity
-        GlobalPosition += _velocity * (float)delta;
+        // Apply Velocity using CharacterBody3D's built-in physics
+        Velocity = _velocity;
+        MoveAndSlide();
+        _velocity = Velocity;
 
-        // Simple Floor Collision (Y=0)
-        if (GlobalPosition.Y <= 0.0f)
-        {
-            GlobalPosition = new Vector3(GlobalPosition.X, 0.0f, GlobalPosition.Z);
-            _velocity.Y = 0;
-            _isGrounded = true;
-        }
-        else if (GlobalPosition.Y > 0.01f)
-        {
-            _isGrounded = false;
-        }
+        // Update grounded state from CharacterBody3D
+        _isGrounded = IsOnFloor();
 
         // Interaction Logic
         if (_swingSystem != null)
         {
-            float distToTee = GlobalPosition.DistanceTo(Vector3.Zero);
+            float distToTee = GlobalPosition.DistanceTo(_swingSystem.TeePosition);
             float distToBall = GlobalPosition.DistanceTo(_swingSystem.BallPosition);
-            bool isBallInField = _swingSystem.BallPosition.Length() > 1.0f;
+            bool isBallInField = _swingSystem.BallPosition.DistanceTo(_swingSystem.TeePosition) > 1.0f;
 
             // Check Ghost Markers
             bool nearGhostMarker = false;
@@ -257,6 +264,91 @@ public partial class PlayerController : Node3D
                 _swingSystem.SetPrompt(false);
             }
         }
+
+        // Search for nearby Golf Carts
+        var carts = GetTree().GetNodesInGroup("carts");
+        GolfCart nearestCart = null;
+        float minDist = 3.0f;
+
+        foreach (Node node in carts)
+        {
+            if (node is GolfCart cart)
+            {
+                float d = GlobalPosition.DistanceTo(cart.GlobalPosition);
+                if (d < minDist)
+                {
+                    minDist = d;
+                    nearestCart = cart;
+                }
+            }
+        }
+
+        if (nearestCart != null && !nearestCart.IsBeingDriven)
+        {
+            if (_swingSystem != null) _swingSystem.SetPrompt(true, "PRESS E TO DRIVE");
+            if (Input.IsActionJustPressed("ui_accept") || Input.IsKeyPressed(Key.E))
+            {
+                EnterVehicle(nearestCart);
+            }
+        }
+    }
+
+    private void HandleDrivingInput(double delta)
+    {
+        if (_currentCart == null)
+        {
+            CurrentState = PlayerState.Idle;
+            return;
+        }
+
+        // Stick player to cart position (relative offset)
+        GlobalPosition = _currentCart.GlobalPosition + _currentCart.Transform.Basis.Y * 0.5f;
+        Rotation = _currentCart.Rotation;
+
+        if (Input.IsActionJustPressed("ui_cancel") || Input.IsKeyPressed(Key.E))
+        {
+            ExitVehicle();
+        }
+    }
+
+    private void HandleSurveyingInput(double delta)
+    {
+        // Surveying uses standard walking controls for movement
+        HandleWalkingInput(delta);
+
+        // Interaction logic for Surveying is handled by the SurveyManager
+    }
+
+    private void EnterVehicle(GolfCart cart)
+    {
+        _currentCart = cart;
+        _currentCart.Enter(this);
+        CurrentState = PlayerState.Driving;
+        Visible = false; // Hide player while driving (or could sit them)
+
+        if (_camera != null)
+        {
+            _camera.SetTarget(_currentCart, true);
+        }
+        if (_swingSystem != null) _swingSystem.SetPrompt(false);
+    }
+
+    private void ExitVehicle()
+    {
+        if (_currentCart == null) return;
+
+        _currentCart.Exit();
+        CurrentState = PlayerState.Idle;
+        Visible = true;
+
+        // Place player next to cart
+        GlobalPosition = _currentCart.GlobalPosition + _currentCart.Transform.Basis.X * 2.0f;
+
+        if (_camera != null)
+        {
+            _camera.SetTarget(this, true);
+        }
+        _currentCart = null;
     }
 
     public void TeleportTo(Vector3 position, Vector3 lookAtTarget)

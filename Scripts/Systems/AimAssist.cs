@@ -14,19 +14,33 @@ public partial class AimAssist : Node3D
 
     public override void _Ready()
     {
-        _aimLine = GetNode<MeshInstance3D>("AimLine");
-        _landingMarker = GetNode<MeshInstance3D>("LandingMarker");
+        _aimLine = GetNodeOrNull<MeshInstance3D>("AimLine");
+        _landingMarker = GetNodeOrNull<MeshInstance3D>("LandingMarker");
 
-        // Find SwingSystem
-        if (SwingSystemPath != null)
-            _swingSystem = GetNode<SwingSystem>(SwingSystemPath);
-        else
+        // Find SwingSystem - Optimized lookup
+        if (SwingSystemPath != null && !SwingSystemPath.IsEmpty)
+            _swingSystem = GetNodeOrNull<SwingSystem>(SwingSystemPath);
+
+        if (_swingSystem == null)
+        {
+            // Try common paths and recursive search
             _swingSystem = GetNodeOrNull<SwingSystem>("/root/DrivingRange/SwingSystem");
+            if (_swingSystem == null) _swingSystem = GetNodeOrNull<SwingSystem>("/root/TerrainTest/SwingSystem");
+            if (_swingSystem == null) _swingSystem = GetTree().Root.FindChild("SwingSystem", true, false) as SwingSystem;
+        }
 
         if (_swingSystem != null)
         {
-            _swingSystem.Connect(SwingSystem.SignalName.ModeChanged, new Callable(this, MethodName.OnModeChanged));
-            _swingSystem.Connect(SwingSystem.SignalName.SwingStageChanged, new Callable(this, MethodName.OnStageChanged));
+            GD.Print($"AimAssist: Linked to SwingSystem at {_swingSystem.GetPath()}");
+            _swingSystem.ModeChanged -= OnModeChanged;
+            _swingSystem.ModeChanged += OnModeChanged;
+
+            _swingSystem.SwingStageChanged -= OnStageChanged;
+            _swingSystem.SwingStageChanged += OnStageChanged;
+        }
+        else
+        {
+            GD.PrintErr("AimAssist: FAILED to find SwingSystem in scene tree!");
         }
 
         // Find Camera
@@ -39,10 +53,15 @@ public partial class AimAssist : Node3D
 
     private void OnStageChanged(int newStage)
     {
-        // Lock the assist visualization once the shot starts executing (ball launches)
+        // 0 = Idle, 1 = Power, 2 = Accuracy, 3 = Executing, 4 = ShotComplete
         if (newStage == (int)SwingStage.Executing)
         {
             _isLocked = true;
+        }
+        else if (newStage == (int)SwingStage.Idle)
+        {
+            _isLocked = false;
+            UpdateVisuals();
         }
     }
 
@@ -52,13 +71,9 @@ public partial class AimAssist : Node3D
 
         if (!_isLocked)
         {
-            // Position at Ball
             GlobalPosition = _swingSystem.BallPosition;
-
-            // Match Camera Horizontal Heading
             Vector3 camRot = _camera.GlobalRotation;
             GlobalRotation = new Vector3(0, camRot.Y, 0);
-
             UpdateVisuals();
         }
     }
@@ -67,35 +82,33 @@ public partial class AimAssist : Node3D
     {
         Visible = isGolfing;
         SetProcess(isGolfing);
+        GD.Print($"AimAssist: ModeChanged isGolfing={isGolfing}");
 
-        // Refresh camera ref if needed
         if (isGolfing)
         {
             _camera = GetViewport().GetCamera3D();
-            _isLocked = false; // Reset lock when entering Golf Mode
+            _isLocked = false;
+            UpdateVisuals();
         }
-
-        if (isGolfing) UpdateVisuals();
     }
 
     private void UpdateVisuals()
     {
-        float power = 10.0f; // Default max
+        float power = 10.0f;
         if (_swingSystem != null)
         {
             power = _swingSystem.GetEstimatedPower();
         }
 
-        // Heuristic: 10 Power = 300y. 5 Power = 150y? 
-        // Let's assume linear scaling for the "Marker" for now.
-        // 300 yards = 274 meters.
-        // 274m / 10 = 27.4m per power point.
-        float predictedMeters = power * 27.4f;
+        // REVERT TO YESTERDAY'S CALIBRATION (Heuristic: 10 Power = 500y/250m)
+        float predictedMeters = power * 25.0f;
+
+        if (Engine.GetFramesDrawn() % 60 == 0)
+            GD.Print($"AimAssist: Power={power}, LandingZ={-predictedMeters}");
 
         if (_aimLine != null)
         {
             _aimLine.Scale = new Vector3(_aimLine.Scale.X, _aimLine.Scale.Y, predictedMeters);
-            // Extend along -Z (Forward)
             _aimLine.Position = new Vector3(0, 0, -predictedMeters / 2.0f);
         }
 

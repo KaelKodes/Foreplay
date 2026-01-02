@@ -20,6 +20,15 @@ public partial class SwingBarController : CanvasLayer
 	private Button _resetBtn;
 	private Button _exitGolfBtn;
 	private Button _toggleWindBtn;
+	private Button _surveyModeBtn;
+	private Button _surveyDoneBtn;
+	private Button _surveyConfirmBtn;
+	private OptionButton _terrainPicker;
+	private Button _raiseBtn;
+	private Button _lowerBtn;
+	private HBoxContainer _fillPanel;
+	private SpinBox _fillSlider;
+	private Control _surveyPanel;
 
 	// Removed Camera Buttons per request
 	// private Button _btnZoom;
@@ -53,7 +62,13 @@ public partial class SwingBarController : CanvasLayer
 
 	public override void _Ready()
 	{
-		_swingSystem = GetNode<SwingSystem>(SwingSystemPath);
+		_swingSystem = GetNodeOrNull<SwingSystem>(SwingSystemPath);
+		if (_swingSystem == null)
+		{
+			_swingSystem = GetTree().Root.FindChild("SwingSystem", true, false) as SwingSystem;
+			GD.Print($"HUD: Searching for SwingSystem fallback: {(_swingSystem != null ? "FOUND" : "NOT FOUND")}");
+		}
+
 		if (WindSystemPath != null) _windSystem = GetNode<WindSystem>(WindSystemPath);
 		if (CameraControllerPath != null) _cameraController = GetNode<CameraController>(CameraControllerPath);
 
@@ -86,6 +101,7 @@ public partial class SwingBarController : CanvasLayer
 		_strokeLabel = GetNode<Label>("StatsPanel/StrokeLabel");
 
 		_promptLabel = GetNode<Label>("PromptContainer/PromptLabel");
+		_surveyPanel = GetNode<Control>("SurveyPanel");
 
 		// Hide confusing base attributes for now
 		GetNode<Label>("StatsPanel/PowerLabel").Visible = false;
@@ -126,8 +142,12 @@ public partial class SwingBarController : CanvasLayer
 
 		if (_powerOverrideSpin != null)
 		{
-			_powerOverrideSpin.ValueChanged += (val) => _swingSystem?.SetPowerOverride((float)val);
-			_powerOverrideSpin.Value = 5.0;
+			_powerOverrideSpin.ValueChanged += (val) =>
+			{
+				GD.Print($"HUD: Slider changed to {val}");
+				_swingSystem?.SetPowerOverride((float)val);
+			};
+			_powerOverrideSpin.Value = 4.0;
 			_powerOverrideSpin.FocusMode = Control.FocusModeEnum.None;
 			_powerOverrideSpin.GetLineEdit().FocusMode = Control.FocusModeEnum.Click;
 		}
@@ -139,6 +159,84 @@ public partial class SwingBarController : CanvasLayer
 			var btn = GetNode<Button>($"WindContainer/WindDirGrid/Btn{dir}");
 			btn.Pressed += () => OnWindDirPressed(dir);
 		}
+
+		_surveyModeBtn = new Button();
+		_surveyModeBtn.Text = "Survey Tool";
+		_surveyModeBtn.FocusMode = Control.FocusModeEnum.None;
+		GetNode<VBoxContainer>("StatsPanel").AddChild(_surveyModeBtn);
+		_surveyModeBtn.Pressed += OnSurveyPressed;
+
+		// Survey Finish Controls (Moved to SurveyPanel)
+		_surveyDoneBtn = new Button();
+		_surveyDoneBtn.Text = "FINISH SHAPE";
+		_surveyDoneBtn.Visible = false;
+		_surveyDoneBtn.FocusMode = Control.FocusModeEnum.None;
+		_surveyDoneBtn.CustomMinimumSize = new Vector2(200, 60);
+		_surveyPanel.AddChild(_surveyDoneBtn);
+		_surveyDoneBtn.Pressed += OnSurveyDonePressed;
+
+		_terrainPicker = new OptionButton();
+		_terrainPicker.AddItem("Fairway");
+		_terrainPicker.AddItem("Rough");
+		_terrainPicker.AddItem("Deep Rough");
+		_terrainPicker.AddItem("Green");
+		_terrainPicker.AddItem("Sand");
+		_terrainPicker.AddItem("Water");
+		_terrainPicker.Visible = false;
+		_terrainPicker.FocusMode = Control.FocusModeEnum.None;
+		_terrainPicker.CustomMinimumSize = new Vector2(200, 40);
+		_surveyPanel.AddChild(_terrainPicker);
+
+		_surveyConfirmBtn = new Button();
+		_surveyConfirmBtn.Text = "CONFIRM TERRAIN";
+		_surveyConfirmBtn.Visible = false;
+		_surveyConfirmBtn.Modulate = Colors.Green;
+		_surveyConfirmBtn.FocusMode = Control.FocusModeEnum.None;
+		_surveyConfirmBtn.CustomMinimumSize = new Vector2(200, 60);
+		_surveyPanel.AddChild(_surveyConfirmBtn);
+		_surveyConfirmBtn.Pressed += OnSurveyConfirmPressed;
+
+		_terrainPicker.ItemSelected += (idx) =>
+		{
+			_swingSystem.SurveyManager?.SetPreviewTerrain((int)idx);
+			UpdateSurveyUIState();
+		};
+
+		// Raise/Lower buttons
+		_raiseBtn = new Button();
+		_raiseBtn.Text = "RAISE [↑]";
+		_raiseBtn.Visible = false;
+		_raiseBtn.FocusMode = Control.FocusModeEnum.None;
+		_raiseBtn.CustomMinimumSize = new Vector2(200, 40);
+		_raiseBtn.Pressed += () => _swingSystem.SurveyManager?.ModifyElevation(0.5f);
+		_surveyPanel.AddChild(_raiseBtn);
+
+		_lowerBtn = new Button();
+		_lowerBtn.Text = "LOWER [↓]";
+		_lowerBtn.Visible = false;
+		_lowerBtn.FocusMode = Control.FocusModeEnum.None;
+		_lowerBtn.CustomMinimumSize = new Vector2(200, 40);
+		_lowerBtn.Pressed += () => _swingSystem.SurveyManager?.ModifyElevation(-0.5f);
+		_surveyPanel.AddChild(_lowerBtn);
+
+		// Fill Controls
+		_fillPanel = new HBoxContainer();
+		_fillPanel.Visible = false;
+		_fillPanel.Alignment = BoxContainer.AlignmentMode.Center;
+		_surveyPanel.AddChild(_fillPanel);
+
+		Label fillLabel = new Label();
+		fillLabel.Text = "Fill %: ";
+		_fillPanel.AddChild(fillLabel);
+
+		_fillSlider = new SpinBox();
+		_fillSlider.MinValue = 0;
+		_fillSlider.MaxValue = 100;
+		_fillSlider.Value = 80; // Default
+		_fillSlider.Step = 5;
+		_fillSlider.FocusMode = Control.FocusModeEnum.None;
+		_fillSlider.ValueChanged += (val) => _swingSystem.SurveyManager?.SetFillPercentage((float)val);
+		_fillPanel.AddChild(_fillSlider);
 	}
 
 	public override void _Input(InputEvent @event)
@@ -170,12 +268,19 @@ public partial class SwingBarController : CanvasLayer
 			}
 
 			bool isUIClick = _backBtn.GetGlobalRect().HasPoint(mouseBtn.Position) ||
-							 _resetBtn.GetGlobalRect().HasPoint(mouseBtn.Position) ||
-							 _exitGolfBtn.GetGlobalRect().HasPoint(mouseBtn.Position) ||
-							 _toggleWindBtn.GetGlobalRect().HasPoint(mouseBtn.Position) ||
-							 (_btnNextShot.Visible && _btnNextShot.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
-							 (_windSpeedSpin != null && _windSpeedSpin.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
-							 (_powerOverrideSpin != null && _powerOverrideSpin.GetGlobalRect().HasPoint(mouseBtn.Position));
+				 _resetBtn.GetGlobalRect().HasPoint(mouseBtn.Position) ||
+				 _exitGolfBtn.GetGlobalRect().HasPoint(mouseBtn.Position) ||
+				 _toggleWindBtn.GetGlobalRect().HasPoint(mouseBtn.Position) ||
+				 (_btnNextShot.Visible && _btnNextShot.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
+				 (_windSpeedSpin != null && _windSpeedSpin.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
+				 (_powerOverrideSpin != null && _powerOverrideSpin.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
+				 (_surveyModeBtn.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
+				 (_surveyDoneBtn.Visible && _surveyDoneBtn.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
+				 (_surveyConfirmBtn.Visible && _surveyConfirmBtn.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
+				 (_terrainPicker.Visible && _terrainPicker.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
+				 (_raiseBtn.Visible && _raiseBtn.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
+				 (_lowerBtn.Visible && _lowerBtn.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
+				 (_fillPanel.Visible && _fillPanel.GetGlobalRect().HasPoint(mouseBtn.Position));
 
 			if (!isUIClick)
 			{
@@ -192,6 +297,11 @@ public partial class SwingBarController : CanvasLayer
 		{
 			_swingSystem.HandleInput();
 			GetViewport().SetInputAsHandled();
+		}
+
+		if (@event is InputEventKey surveyKey && surveyKey.Pressed && surveyKey.Keycode == Key.V)
+		{
+			OnSurveyPressed();
 		}
 	}
 
@@ -301,6 +411,90 @@ public partial class SwingBarController : CanvasLayer
 	private void OnExitGolfPressed()
 	{
 		_swingSystem.ExitGolfMode();
+	}
+
+	private void OnSurveyPressed()
+	{
+		if (_swingSystem.CurrentStage == SwingStage.Executing) return;
+
+		var player = _swingSystem.GetNode<PlayerController>(_swingSystem.GetPathTo(_swingSystem.GetNodeOrNull<PlayerController>("../PlayerPlaceholder")));
+		if (player.CurrentState == PlayerState.Surveying)
+		{
+			_swingSystem.ExitSurveyMode();
+			_surveyPanel.Visible = false;
+			_surveyDoneBtn.Visible = false;
+			_terrainPicker.Visible = false;
+			_surveyConfirmBtn.Visible = false;
+		}
+		else
+		{
+			_swingSystem.EnterSurveyMode();
+			_surveyPanel.Visible = true;
+			_surveyDoneBtn.Visible = true;
+			_raiseBtn.Visible = false;
+			_lowerBtn.Visible = false;
+			_fillPanel.Visible = false;
+		}
+	}
+
+	private void OnSurveyDonePressed()
+	{
+		GD.Print("SwingBarController: Finish Shape Pressed!");
+
+		if (_swingSystem.SurveyManager == null)
+		{
+			GD.Print("SwingBarController ERROR: SurveyManager is still null!");
+			return;
+		}
+
+		_surveyDoneBtn.Hide();
+		_terrainPicker.Show();
+		_surveyConfirmBtn.Show();
+		_raiseBtn.Show();
+		_lowerBtn.Show();
+
+		_swingSystem.SetPrompt(true, "SCULPT TERRAIN AND CONFIRM");
+
+		int selectedIdx = _terrainPicker.Selected;
+		if (selectedIdx < 0)
+		{
+			selectedIdx = 0;
+			_terrainPicker.Selected = 0;
+		}
+
+		_swingSystem.SurveyManager.SetPreviewTerrain(selectedIdx);
+		UpdateSurveyUIState();
+	}
+
+	private void UpdateSurveyUIState()
+	{
+		if (_swingSystem.SurveyManager == null) return;
+
+		int type = _terrainPicker.Selected;
+		bool isHole = _swingSystem.SurveyManager.CurrentElevation < 0;
+
+		// Only show fill options if it's a hole and Water/Sand is picked
+		_fillPanel.Visible = isHole && (type == 4 || type == 5);
+	}
+
+	private void OnSurveyConfirmPressed()
+	{
+		GD.Print("SwingBarController: Confirm Terrain Pressed!");
+		if (_swingSystem.SurveyManager == null) return;
+
+		_swingSystem.SurveyManager.BakeTerrain(_terrainPicker.Selected);
+
+		_terrainPicker.Hide();
+		_surveyConfirmBtn.Hide();
+		_raiseBtn.Hide();
+		_lowerBtn.Hide();
+		_fillPanel.Hide();
+
+		_swingSystem.ExitSurveyMode();
+		_swingSystem.SetPrompt(true, "TERRAIN BAKED!");
+
+		var timer = GetTree().CreateTimer(2.0);
+		timer.Timeout += () => _swingSystem.SetPrompt(false);
 	}
 
 	private void OnSwingValuesUpdated(float currentBarValue, float lockedPower, float lockedAccuracy)

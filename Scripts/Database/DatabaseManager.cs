@@ -24,7 +24,7 @@ public partial class DatabaseManager : Node
             @"
                 CREATE TABLE IF NOT EXISTS PlayerStats (
                     Id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    Power INTEGER DEFAULT 5,
+                    Power INTEGER DEFAULT 4,
                     Control INTEGER DEFAULT 10,
                     Touch INTEGER DEFAULT 10,
                     Consistency INTEGER DEFAULT 10,
@@ -81,7 +81,7 @@ public partial class DatabaseManager : Node
             // Reset Power to new calibrated baseline (5)
             try
             {
-                command.CommandText = "UPDATE PlayerStats SET Power = 5 WHERE Id = 1";
+                command.CommandText = "UPDATE PlayerStats SET Power = 4 WHERE Id = 1";
                 command.ExecuteNonQuery();
             }
             catch (Exception) { }

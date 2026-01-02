@@ -1,0 +1,117 @@
+[gd_scene load_steps=13 format=3 uid="uid://cx6m6m8j8j8j"]
+
+[ext_resource type="Script" path="res://Scripts/Systems/SwingSystem.cs" id="1_swing"]
+[ext_resource type="PackedScene" uid="uid://b5k8q8q8q8q8" path="res://Scenes/Entities/GolfBall.tscn" id="2_ball_scene"]
+[ext_resource type="PackedScene" uid="uid://c6u7q8q8q8q8" path="res://Scenes/UI/HUD.tscn" id="3_hud_scene"]
+[ext_resource type="Script" path="res://Scripts/UI/SwingBarController.cs" id="4_hud_script"]
+[ext_resource type="Script" path="res://Scripts/Systems/CameraController.cs" id="5_camera"]
+[ext_resource type="PackedScene" uid="uid://dmsk8j8j8j8j" path="res://Scenes/Environment/DistanceMarker.tscn" id="6_marker"]
+[ext_resource type="Script" path="res://Scripts/Systems/WindSystem.cs" id="7_wind"]
+[ext_resource type="PackedScene" path="res://Scenes/Environment/TargetGreen.tscn" id="8_green"]
+
+[sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
+sky_top_color = Color(0.384314, 0.454902, 0.54902, 1)
+
+[sub_resource type="Sky" id="Sky_1"]
+sky_material = SubResource("ProceduralSkyMaterial_1")
+
+[sub_resource type="Environment" id="Environment_1"]
+background_mode = 2
+sky = SubResource("Sky_1")
+tonemap_mode = 2
+glow_enabled = true
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_floor"]
+albedo_color = Color(0.2, 0.5, 0.2, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_rough"]
+albedo_color = Color(0.1, 0.3, 0.1, 1)
+
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_tee"]
+albedo_color = Color(0.1, 0.4, 0.1, 1)
+
+[node name="DrivingRange" type="Node3D"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="."]
+environment = SubResource("Environment_1")
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="."]
+transform = Transform3D(-0.866025, -0.433013, 0.25, 0, 0.5, 0.866025, -0.5, 0.75, -0.433013, 0, 0, 0)
+shadow_enabled = true
+
+[node name="Fairway" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.5, 500)
+use_collision = true
+size = Vector3(200, 1, 1000)
+material = SubResource("StandardMaterial3D_floor")
+
+[node name="RoughLeft" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -300, -0.55, 500)
+use_collision = true
+size = Vector3(400, 1, 1000)
+material = SubResource("StandardMaterial3D_rough")
+
+[node name="RoughRight" type="CSGBox3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 300, -0.55, 500)
+use_collision = true
+size = Vector3(400, 1, 1000)
+material = SubResource("StandardMaterial3D_rough")
+
+[node name="TeeBox" type="CSGBox3D" parent="."]
+use_collision = true
+size = Vector3(10, 0.2, 10)
+material = SubResource("StandardMaterial3D_tee")
+
+[node name="VisualTee" type="CSGCylinder3D" parent="TeeBox"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.11, 0)
+radius = 0.02
+height = 0.08
+material = SubResource("StandardMaterial3D_tee")
+
+[node name="PlayerPlaceholder" type="Node3D" parent="."]
+transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 0, 0.1, 0)
+
+[node name="Camera3D" type="Camera3D" parent="PlayerPlaceholder"]
+transform = Transform3D(1, 0, 0, 0, 0.939693, 0.34202, 0, -0.34202, 0.939693, 0, 2.5, 4.5)
+script = ExtResource("5_camera")
+TargetPath = NodePath("../../GolfBall")
+
+[node name="WindSystem" type="Node" parent="."]
+script = ExtResource("7_wind")
+
+[node name="SwingSystem" type="Node" parent="."]
+script = ExtResource("1_swing")
+BallPath = NodePath("../GolfBall")
+CameraPath = NodePath("../PlayerPlaceholder/Camera3D")
+WindSystemPath = NodePath("../WindSystem")
+
+[node name="GolfBall" parent="." instance=ExtResource("2_ball_scene")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.25, 0)
+
+[node name="HUD" parent="." instance=ExtResource("3_hud_scene")]
+script = ExtResource("4_hud_script")
+SwingSystemPath = NodePath("../SwingSystem")
+WindSystemPath = NodePath("../WindSystem")
+
+[node name="Marker100" parent="." instance=ExtResource("6_marker")]
+transform = Transform3D(-0.9995655, 0, -0.029474303, 0, 1, 0, 0.029474303, 0, -0.9995655, 0, 0, 91.44)
+
+[node name="Marker200" parent="." instance=ExtResource("6_marker")]
+transform = Transform3D(-0.966394, 0, 0.25706542, 0, 1, 0, -0.25706542, 0, -0.966394, 0, 0, 182.88)
+Text = "200y"
+
+[node name="Marker300" parent="." instance=ExtResource("6_marker")]
+transform = Transform3D(-0.99104154, 0, 0.13355374, 0, 1, 0, -0.13355374, 0, -0.99104154, 0, 0, 274.32)
+Text = "300y"
+
+[node name="Marker400" parent="." instance=ExtResource("6_marker")]
+transform = Transform3D(-1, 0, 8.74228e-08, 0, 1, 0, -8.74228e-08, 0, -1, 0, 0, 365.76)
+Text = "400y"
+
+[node name="Green600" parent="." instance=ExtResource("8_green")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 548.64)
+GreenName = "600y Green"
+
+[node name="Green800" parent="." instance=ExtResource("8_green")]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.01, 731.52)
+GreenName = "800y Green"

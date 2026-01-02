@@ -1,0 +1,28 @@
+[gd_scene load_steps=4 format=3 uid="uid://b5k8q8q8q8q8"]
+
+[ext_resource type="Script" path="res://Scripts/Entities/BallController.cs" id="1_ball_script"]
+
+[sub_resource type="PhysicsMaterial" id="PhysicsMaterial_1"]
+bounce = 0.4
+friction = 0.3
+
+[sub_resource type="SphereShape3D" id="SphereShape3D_1"]
+radius = 0.021
+
+[sub_resource type="SphereMesh" id="SphereMesh_1"]
+radius = 0.021
+height = 0.042
+
+[node name="GolfBall" type="RigidBody3D"]
+physics_material_override = SubResource("PhysicsMaterial_1")
+continuous_cd = true
+contact_monitor = true
+max_contacts_reported = 4
+mass = 0.045
+script = ExtResource("1_ball_script")
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="."]
+shape = SubResource("SphereShape3D_1")
+
+[node name="MeshInstance3D" type="MeshInstance3D" parent="."]
+mesh = SubResource("SphereMesh_1")

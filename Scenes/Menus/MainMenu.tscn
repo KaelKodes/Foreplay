@@ -1,0 +1,76 @@
+[gd_scene load_steps=3 format=3 uid="uid://dg5v7v7v7v7v"]
+
+[ext_resource type="Script" uid="uid://bb306iqpv63uy" path="res://Scripts/UI/MainMenuController.cs" id="1_menu_script"]
+
+[sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
+bg_color = Color(0.05, 0.05, 0.08, 1)
+
+[node name="MainMenu" type="Control"]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+script = ExtResource("1_menu_script")
+
+[node name="Background" type="Panel" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
+
+[node name="CenterContainer" type="CenterContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+
+[node name="VBoxContainer" type="VBoxContainer" parent="CenterContainer"]
+layout_mode = 2
+theme_override_constants/separation = 20
+
+[node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 64
+text = "FOREPLAY:
+PAR-TEE TIME"
+horizontal_alignment = 1
+
+[node name="Subtitle" type="Label" parent="CenterContainer/VBoxContainer"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.5, 0.8, 0.5, 1)
+theme_override_font_sizes/font_size = 24
+text = "A Golf RPG of Mastery"
+horizontal_alignment = 1
+
+[node name="Spacer" type="Control" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(0, 40)
+layout_mode = 2
+
+[node name="DrivingRangeBtn" type="Button" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Driving Range"
+
+[node name="PuttingRangeBtn" type="Button" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Putting Range"
+
+[node name="ExitBtn" type="Button" parent="CenterContainer/VBoxContainer"]
+custom_minimum_size = Vector2(250, 60)
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "Quit Game"
+
+[connection signal="pressed" from="CenterContainer/VBoxContainer/DrivingRangeBtn" to="." method="OnDrivingRangePressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/PuttingRangeBtn" to="." method="OnPuttingRangePressed"]
+[connection signal="pressed" from="CenterContainer/VBoxContainer/ExitBtn" to="." method="OnExitPressed"]

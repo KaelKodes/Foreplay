@@ -1,0 +1,26 @@
+# Godot-specific ignores
+.godot/
+*.import
+export_presets.cfg
+
+# Mono/C#-specific ignores
+.mono/
+bin/
+obj/
+*.csproj
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+
+# System/IDE ignores
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+Thumbs.db
+
+# Other
+*.log

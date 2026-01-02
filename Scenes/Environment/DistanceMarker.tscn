@@ -1,0 +1,38 @@
+[gd_scene load_steps=5 format=3 uid="uid://dmsk8j8j8j8j"]
+
+[ext_resource type="Script" path="res://Scripts/Environment/DistanceMarker.cs" id="1_marker"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_Post"]
+albedo_color = Color(0.3, 0.2, 0.1, 1.0)
+
+[sub_resource type="CylinderMesh" id="Mesh_Post"]
+material = SubResource("Mat_Post")
+top_radius = 0.05
+bottom_radius = 0.05
+height = 2.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_Board"]
+albedo_color = Color(0.95, 0.95, 0.95, 1.0)
+
+[sub_resource type="BoxMesh" id="Mesh_Board"]
+material = SubResource("Mat_Board")
+size = Vector3(1.5, 0.8, 0.1)
+
+[node name="DistanceMarker" type="Node3D"]
+script = ExtResource("1_marker")
+
+[node name="Post" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+mesh = SubResource("Mesh_Post")
+
+[node name="Board" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.6, 0.06)
+mesh = SubResource("Mesh_Board")
+
+[node name="Label3D" type="Label3D" parent="Board"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.06)
+pixel_size = 0.01
+text = "100y"
+font_size = 64
+outline_size = 8
+modulate = Color(0, 0, 0, 1)

@@ -1,0 +1,307 @@
+[gd_scene load_steps=2 format=3 uid="uid://c6u7q8q8q8q8"]
+
+[ext_resource type="Texture2D" uid="uid://c0hbtxjib02gc" path="res://Assets/Textures/UI/WindArrow.png" id="2_wind_arrow"]
+
+[node name="HUD" type="CanvasLayer"]
+
+[node name="SwingContainer" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -250.0
+offset_top = -120.0
+offset_right = 250.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="PowerBar" type="ProgressBar" parent="SwingContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+theme_override_constants/outline_size = 0
+show_percentage = false
+
+[node name="AccuracyLine" type="ColorRect" parent="SwingContainer"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 125.0
+offset_top = -40.0
+offset_right = 128.0
+offset_bottom = 40.0
+grow_vertical = 2
+
+[node name="PowerLine" type="ColorRect" parent="SwingContainer"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_left = 450.0
+offset_top = -40.0
+offset_right = 453.0
+offset_bottom = 40.0
+grow_vertical = 2
+
+[node name="AccuracyMarker" type="ColorRect" parent="SwingContainer"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -30.0
+offset_right = 6.0
+offset_bottom = 30.0
+grow_vertical = 2
+color = Color(1, 0, 0, 1)
+
+[node name="LockedPowerLine" type="ColorRect" parent="SwingContainer"]
+visible = false
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -40.0
+offset_right = 3.0
+offset_bottom = 40.0
+grow_vertical = 2
+color = Color(1, 1, 0, 1)
+
+[node name="LockedAccuracyLine" type="ColorRect" parent="SwingContainer"]
+visible = false
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -40.0
+offset_right = 3.0
+offset_bottom = 40.0
+grow_vertical = 2
+color = Color(1, 1, 0, 1)
+
+[node name="WindContainer" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -180.0
+offset_top = 20.0
+offset_right = -30.0
+offset_bottom = 250.0
+grow_horizontal = 0
+
+[node name="WindArrow" type="TextureRect" parent="WindContainer"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -32.0
+offset_right = 32.0
+offset_bottom = 64.0
+grow_horizontal = 2
+pivot_offset = Vector2(32, 32)
+texture = ExtResource("2_wind_arrow")
+expand_mode = 1
+
+[node name="WindLabel" type="Label" parent="WindContainer"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -40.0
+offset_top = 65.0
+offset_right = 40.0
+offset_bottom = 90.0
+grow_horizontal = 2
+text = "10 mph"
+horizontal_alignment = 1
+
+[node name="WindDirGrid" type="GridContainer" parent="WindContainer"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -60.0
+offset_top = -139.0
+offset_right = 60.0
+offset_bottom = -9.0
+grow_horizontal = 2
+grow_vertical = 0
+columns = 3
+
+[node name="BtnNW" type="Button" parent="WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 10
+text = "NW"
+
+[node name="BtnN" type="Button" parent="WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 10
+text = "N"
+
+[node name="BtnNE" type="Button" parent="WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 10
+text = "NE"
+
+[node name="BtnW" type="Button" parent="WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 10
+text = "W"
+
+[node name="Control" type="Control" parent="WindContainer/WindDirGrid"]
+layout_mode = 2
+
+[node name="BtnE" type="Button" parent="WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 10
+text = "E"
+
+[node name="BtnSW" type="Button" parent="WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 10
+text = "SW"
+
+[node name="BtnS" type="Button" parent="WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 10
+text = "S"
+
+[node name="BtnSE" type="Button" parent="WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+focus_mode = 0
+theme_override_font_sizes/font_size = 10
+text = "SE"
+
+[node name="WindSpeedSpin" type="SpinBox" parent="WindContainer"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -43.281246
+offset_top = -30.0
+offset_right = 43.28125
+offset_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 0
+max_value = 30.0
+value = 20.0
+alignment = 1
+suffix = "mph"
+
+[node name="SpinSelection" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -150.0
+offset_right = -50.0
+offset_bottom = -50.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="BallBase" type="ColorRect" parent="SpinSelection"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="SpinMarker" type="ColorRect" parent="SpinSelection"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -5.0
+offset_top = -5.0
+offset_right = 5.0
+offset_bottom = 5.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 0, 0, 1)
+
+[node name="StatsPanel" type="VBoxContainer" parent="."]
+offset_left = 20.0
+offset_top = 20.0
+offset_right = 200.0
+offset_bottom = 300.0
+
+[node name="BackBtn" type="Button" parent="StatsPanel"]
+layout_mode = 2
+focus_mode = 0
+text = "Back to Menu"
+
+[node name="ResetBtn" type="Button" parent="StatsPanel"]
+layout_mode = 2
+focus_mode = 0
+text = "Reset Ball"
+
+[node name="ToggleWindBtn" type="Button" parent="StatsPanel"]
+layout_mode = 2
+focus_mode = 0
+text = "Wind: ON"
+
+[node name="PowerLabel" type="Label" parent="StatsPanel"]
+layout_mode = 2
+text = "Power: 10"
+
+[node name="ControlLabel" type="Label" parent="StatsPanel"]
+layout_mode = 2
+text = "Control: 10"
+
+[node name="PowerOverrideLabel" type="Label" parent="StatsPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 10
+text = "Power Override (Debug):"
+
+[node name="PowerOverrideSpin" type="SpinBox" parent="StatsPanel"]
+layout_mode = 2
+min_value = 4.0
+max_value = 9.0
+step = 0.1
+value = 5.0
+alignment = 1
+
+[node name="DistanceLabel" type="Label" parent="StatsPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+theme_override_font_sizes/font_size = 20
+text = "Carry: 0.0y"
+
+[node name="TotalLabel" type="Label" parent="StatsPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.6, 1, 0.6, 1)
+theme_override_font_sizes/font_size = 24
+text = "Total: 0.0y"

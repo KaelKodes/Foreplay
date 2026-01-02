@@ -6,7 +6,8 @@ public enum SwingStage
     Idle,
     Power,
     Accuracy,
-    Executing
+    Executing,
+    ShotComplete
 }
 
 public partial class SwingSystem : Node
@@ -53,7 +54,6 @@ public partial class SwingSystem : Node
         }
 
         if (CameraPath != null) _camera = GetNode<CameraController>(CameraPath);
-        if (CameraPath != null) _camera = GetNode<CameraController>(CameraPath);
 
         GD.Print("SwingSystem _Ready: Checking WindSystem...");
         if (WindSystemPath != null)
@@ -82,13 +82,15 @@ public partial class SwingSystem : Node
     private void OnBallSettled(float total)
     {
         EmitSignal(SignalName.ShotDistanceUpdated, -1, total);
-        _stage = SwingStage.Idle; // Allow resetting or new shot
+        _stage = SwingStage.ShotComplete; // Block input until Next Shot
+        if (_camera != null) _camera.SetFreeLook(true);
     }
 
     public override void _Process(double delta)
     {
         // Debug speed sent to HUD during movement
-        if ((_stage == SwingStage.Executing || _stage == SwingStage.Idle) && _ball != null && _ball.LinearVelocity.Length() > 0.1f)
+        // Debug speed sent to HUD during movement
+        if ((_stage == SwingStage.Executing || _stage == SwingStage.Idle || _stage == SwingStage.ShotComplete) && _ball != null && _ball.LinearVelocity.Length() > 0.1f)
         {
             EmitSignal(SignalName.ShotDistanceUpdated, -2, _ball.LinearVelocity.Length());
         }
@@ -152,6 +154,9 @@ public partial class SwingSystem : Node
             case SwingStage.Power: // Active Cycle
                 ProcessCycleInput();
                 break;
+            case SwingStage.ShotComplete:
+                // DO NOTHING. Input is blocked.
+                break;
         }
     }
 
@@ -187,7 +192,6 @@ public partial class SwingSystem : Node
         }
     }
 
-    private void StopPower() { } // Deprecated
 
     private void StopAccuracy()
     {
@@ -339,8 +343,56 @@ public partial class SwingSystem : Node
         }
     }
 
+    [Signal] public delegate void StrokeUpdatedEventHandler(int stroke);
+
+    // ...
+    private int _strokeCount = 1;
+
+    public void PrepareNextShot()
+    {
+        _strokeCount++;
+        EmitSignal(SignalName.StrokeUpdated, _strokeCount);
+
+        // 1. Move Player to Ball
+        Node3D player = GetNode<Node3D>("../PlayerPlaceholder");
+        if (player != null && player is PlayerController pc)
+        {
+            // Offset player slightly behind ball? Or right on top?
+            // Usually behind. Let's say 0.5m back along the line to the hole.
+            // For now, just ON the ball acts as the pivot.
+            // Actually, we need to find the Target Green to look at it.
+            // Hardcoded 600y Green pos for now or find it dynamically?
+            // Let's look at World +Z (Fairway) default if no target.
+            Vector3 lookTarget = new Vector3(0, 0, 1000);
+            pc.TeleportTo(_ball.GlobalPosition, lookTarget);
+        }
+
+        // 2. Reset Ball Physics (Freeze in place)
+        _ball.PrepareNextShot();
+
+        // 3. Reset System State
+        _stage = SwingStage.Idle;
+        _timer = 0.0f;
+        _isReturnPhase = false;
+        _lockedPower = -1.0f;
+        _lockedAccuracy = -1.0f;
+
+        if (_camera != null)
+        {
+            _camera.SetFollowing(false);
+            _camera.SetFreeLook(false);
+        }
+        EmitSignal(SignalName.SwingStageChanged, (int)_stage);
+        EmitSignal(SignalName.SwingValuesUpdated, 0, -1, -1);
+        EmitSignal(SignalName.ShotDistanceUpdated, 0, 0);
+    }
+
     public void ResetSwing()
     {
+        // Full Reset (Back to Tee)
+        _strokeCount = 1;
+        EmitSignal(SignalName.StrokeUpdated, _strokeCount);
+
         _stage = SwingStage.Idle;
         _timer = 0.0f;
         _isReturnPhase = false;
@@ -348,7 +400,20 @@ public partial class SwingSystem : Node
         _lockedAccuracy = -1.0f;
 
         _ball.Reset();
-        if (_camera != null) _camera.SetFollowing(false);
+
+        // Reset Player Config
+        Node3D player = GetNode<Node3D>("../PlayerPlaceholder");
+        if (player is PlayerController pc)
+        {
+            pc.GlobalPosition = new Vector3(0, 0.1f, 0);
+            pc.RotationDegrees = new Vector3(0, 180, 0);
+        }
+
+        if (_camera != null)
+        {
+            _camera.SetFollowing(false);
+            _camera.SetFreeLook(false);
+        }
         EmitSignal(SignalName.SwingStageChanged, (int)_stage);
         EmitSignal(SignalName.SwingValuesUpdated, 0, -1, -1);
         EmitSignal(SignalName.ShotDistanceUpdated, 0, 0);
@@ -369,4 +434,9 @@ public partial class SwingSystem : Node
     }
 
     public float GetAnger() => _playerStats.Anger;
+
+    public float GetEstimatedPower()
+    {
+        return (_powerOverride > 0) ? _powerOverride : _playerStats.Power;
+    }
 }

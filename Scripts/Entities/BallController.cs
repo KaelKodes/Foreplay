@@ -37,6 +37,7 @@ public partial class BallController : RigidBody3D
     private const float SETTLE_THRESHOLD = 0.4f; // m/s
     private const float SETTLE_TIME = 0.8f;
     private const float MIN_FLIGHT_TIME = 0.2f;
+    private const float METERS_TO_YARDS = 1.09361f;
 
     public override void _Ready()
     {
@@ -84,7 +85,7 @@ public partial class BallController : RigidBody3D
         _settleTimer = 0.0f;
         Freeze = true;
         float total = _launchPos.DistanceTo(new Vector3(GlobalPosition.X, _launchPos.Y, GlobalPosition.Z));
-        EmitSignal(SignalName.BallSettled, total * 1.09361f);
+        EmitSignal(SignalName.BallSettled, total * METERS_TO_YARDS);
     }
 
     public void Launch(Vector3 velocity, Vector3 spin)
@@ -122,11 +123,6 @@ public partial class BallController : RigidBody3D
             onGround = false;
         }
 
-        // Debug removed
-        // if (_state == BallState.InFlight && _flightTimer < 0.2f)
-        // {
-        //     GD.Print($"Frame {_flightTimer}: PosY={pos.Y:F3} Vel={state.LinearVelocity.Length():F1} onGround={onGround} RayHits={result.Count}");
-        // }
 
         // 2. Aerodynamics (LIFT only airborne, DRAG always)
         ApplyAerodynamics(state, !onGround);
@@ -138,7 +134,7 @@ public partial class BallController : RigidBody3D
             {
                 _hasCarried = true;
                 float carry = _launchPos.DistanceTo(new Vector3(pos.X, _launchPos.Y, pos.Z));
-                EmitSignal(SignalName.BallCarried, carry * 1.09361f);
+                EmitSignal(SignalName.BallCarried, carry * METERS_TO_YARDS);
                 _state = BallState.Rolling;
             }
 
@@ -237,6 +233,19 @@ public partial class BallController : RigidBody3D
 
         Vector3 totalForce = dragForce + liftForce;
         state.LinearVelocity += (totalForce / BallMass) * dt;
+    }
+
+    public void PrepareNextShot()
+    {
+        _state = BallState.Ready;
+        LinearVelocity = Vector3.Zero;
+        AngularVelocity = Vector3.Zero;
+        _spinVector = Vector3.Zero;
+        // Do NOT reset GlobalPosition
+        Freeze = false;
+        _hasCarried = false;
+        _flightTimer = 0.0f;
+        _settleTimer = 0.0f;
     }
 
     public void Reset()

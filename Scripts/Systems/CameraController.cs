@@ -8,41 +8,72 @@ public partial class CameraController : Camera3D
     [Export] public float SmoothSpeed = 5.0f;
 
     private Node3D _target;
-    private Vector3 _originalPosition;
-    private Vector3 _originalRotation;
-    private bool _isFollowing = false;
+    private bool _isFollowingBall = false;
 
     public override void _Ready()
     {
-        if (TargetPath != null)
-            _target = GetNode<Node3D>(TargetPath);
+        if (TargetPath != null) _target = GetNode<Node3D>(TargetPath);
+    }
 
-        _originalPosition = Position;
-        _originalRotation = GlobalRotation; // Use Global to account for parent rotation
+    public void Initialize(Vector3 pos, Vector3 rotDegrees)
+    {
+        // No-op for now, simplified
+    }
+
+    private bool _canFreeLook = false;
+    private float _lookSensitivity = 0.3f;
+
+    public override void _Input(InputEvent @event)
+    {
+        if (!_canFreeLook) return;
+
+        if (@event is InputEventMouseMotion motion && Input.IsMouseButtonPressed(MouseButton.Right))
+        {
+            // Rotate camera based on mouse motion
+            RotationDegrees -= new Vector3(motion.Relative.Y, motion.Relative.X, 0) * _lookSensitivity;
+
+            // Clamp pitch to prevent flipping
+            Vector3 rot = RotationDegrees;
+            rot.X = Mathf.Clamp(rot.X, -80, 80);
+            RotationDegrees = rot;
+        }
     }
 
     public override void _PhysicsProcess(double delta)
     {
-        if (_isFollowing && _target != null)
-        {
-            // Calculate Offset using GLOBAL rotation to ensure we are actually behind the ball
-            // regardless of parent rotation (Player/Tee).
-            Transform3D originTransform = new Transform3D(Basis.FromEuler(_originalRotation), Vector3.Zero);
-            Vector3 relativeOffset = originTransform.Basis * FollowOffset;
+        if (_target == null) return;
 
-            Vector3 targetPos = _target.GlobalPosition + relativeOffset;
+        // If Free Look is enabled, skip automatic following/positioning logic
+        // This allows the player to rotate the camera freely from its last position.
+        if (_canFreeLook) return;
+
+        if (_isFollowingBall)
+        {
+            // Follow Ball Logic
+            // Ball moves along World +Z. Camera should be World -Z relative to ball to look forward.
+            // Offset (0, 10, -10) places camera behind and above.
+            Vector3 targetPos = _target.GlobalPosition + new Vector3(0, 10, -10);
             GlobalPosition = GlobalPosition.Lerp(targetPos, (float)delta * SmoothSpeed);
+            LookAt(_target.GlobalPosition);
+        }
+        else
+        {
+            // Tee View (Attached to PlayerPlaceholder)
+            // Maintain local offset and consistent downward tilt
+            Position = Position.Lerp(FollowOffset, (float)delta * SmoothSpeed);
+            RotationDegrees = RotationDegrees.Lerp(new Vector3(-20, 0, 0), (float)delta * SmoothSpeed);
         }
     }
 
     public void SetFollowing(bool following)
     {
-        _isFollowing = following;
-        if (!following)
-        {
-            // Reset to tee view
-            Position = _originalPosition;
-            GlobalRotation = _originalRotation;
-        }
+        _isFollowingBall = following;
     }
+
+    public void SetFreeLook(bool enabled)
+    {
+        _canFreeLook = enabled;
+    }
+
+    public void ToggleMode(int mode) { } // Stub for compatibility
 }

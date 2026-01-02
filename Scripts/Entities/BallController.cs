@@ -11,6 +11,9 @@ public enum BallState
 
 public partial class BallController : RigidBody3D
 {
+    // Multiplayer Ownership (0 = Server/Unassigned, >0 = PeerID)
+    public int OwnerId { get; set; } = 0;
+
     [Export] public float DragCoefficient = 0.18f; // Increased for better wind interaction
     [Export] public float LiftCoefficient = 0.15f; // Reduced to balance against wind
     [Export] public float AirDensity = 1.225f;
@@ -90,6 +93,7 @@ public partial class BallController : RigidBody3D
 
     public void Launch(Vector3 velocity, Vector3 spin)
     {
+        Freeze = false; // Unfreeze FIRST for Godot 4 stability
         LinearVelocity = velocity;
         AngularVelocity = spin;
         _spinVector = spin;
@@ -98,7 +102,6 @@ public partial class BallController : RigidBody3D
         _hasCarried = false;
         _flightTimer = 0.0f;
         _settleTimer = 0.0f;
-        Freeze = false;
     }
 
     public override void _IntegrateForces(PhysicsDirectBodyState3D state)

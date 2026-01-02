@@ -1,26 +1,19 @@
-# Godot-specific ignores
+# Godot generated files
+.import/
 .godot/
-*.import
+export.cfg
 export_presets.cfg
-
-# Mono/C#-specific ignores
+# Mono/.NET
 .mono/
+# Build output
 bin/
 obj/
-*.csproj
-*.sln
-*.suo
-*.user
-*.userosscache
-*.sln.docstates
-
-# System/IDE ignores
-.vscode/
-.idea/
-*.swp
-*.swo
+# OS files
 .DS_Store
 Thumbs.db
-
-# Other
-*.log
+# Temporary files
+*.tmp
+# VSCode
+.vscode/
+# Rider
+.idea/

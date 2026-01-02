@@ -1,9 +1,17 @@
-[gd_scene load_steps=3 format=3 uid="uid://dg5v7v7v7v7v"]
+[gd_scene load_steps=4 format=3 uid="uid://dg5v7v7v7v7v"]
 
 [ext_resource type="Script" uid="uid://bb306iqpv63uy" path="res://Scripts/UI/MainMenuController.cs" id="1_menu_script"]
 
 [sub_resource type="StyleBoxFlat" id="StyleBoxFlat_bg"]
 bg_color = Color(0.05, 0.05, 0.08, 1)
+
+[sub_resource type="Environment" id="Environment_MainMenuBalls"]
+background_mode = 1
+ambient_light_source = 2
+ambient_light_color = Color(1, 1, 1, 1)
+ambient_light_energy = 0.4
+tonemap_mode = 2
+glow_enabled = true
 
 [node name="MainMenu" type="Control"]
 layout_mode = 3
@@ -23,6 +31,40 @@ grow_horizontal = 2
 grow_vertical = 2
 theme_override_styles/panel = SubResource("StyleBoxFlat_bg")
 
+[node name="BallViewport" type="SubViewportContainer" parent="."]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+stretch = true
+
+[node name="SubViewport" type="SubViewport" parent="BallViewport"]
+transparent_bg = true
+handle_input_locally = false
+size = Vector2i(1152, 648)
+render_target_update_mode = 4
+
+[node name="MenuStage" type="Node3D" parent="BallViewport/SubViewport"]
+
+[node name="WorldEnvironment" type="WorldEnvironment" parent="BallViewport/SubViewport/MenuStage"]
+environment = SubResource("Environment_MainMenuBalls")
+
+[node name="Camera3D" type="Camera3D" parent="BallViewport/SubViewport/MenuStage"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 5)
+projection = 1
+size = 2.0
+
+[node name="DirectionalLight3D" type="DirectionalLight3D" parent="BallViewport/SubViewport/MenuStage"]
+transform = Transform3D(1, 0, 0, 0, 0.866025, 0.5, 0, -0.5, 0.866025, 0, 2, 2)
+light_energy = 1.2
+sky_mode = 1
+
+[node name="BallsContainer" type="Node3D" parent="BallViewport/SubViewport/MenuStage"]
+
+[node name="CollidersContainer" type="Node3D" parent="BallViewport/SubViewport/MenuStage"]
+
 [node name="CenterContainer" type="CenterContainer" parent="."]
 layout_mode = 1
 anchors_preset = 15
@@ -37,6 +79,7 @@ theme_override_constants/separation = 20
 
 [node name="Title" type="Label" parent="CenterContainer/VBoxContainer"]
 layout_mode = 2
+size_flags_vertical = 0
 theme_override_font_sizes/font_size = 64
 text = "FOREPLAY:
 PAR-TEE TIME"

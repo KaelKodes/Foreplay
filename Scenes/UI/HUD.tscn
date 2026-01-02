@@ -294,6 +294,11 @@ layout_mode = 2
 focus_mode = 0
 text = "Reset Ball"
 
+[node name="ExitGolfBtn" type="Button" parent="StatsPanel"]
+layout_mode = 2
+focus_mode = 0
+text = "Exit Golf Mode"
+
 [node name="ToggleWindBtn" type="Button" parent="StatsPanel"]
 layout_mode = 2
 focus_mode = 0
@@ -337,3 +342,21 @@ layout_mode = 2
 theme_override_colors/font_color = Color(0.6, 1, 0.6, 1)
 theme_override_font_sizes/font_size = 24
 text = "Total: 0.0y"
+
+[node name="PromptContainer" type="CenterContainer" parent="."]
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="PromptLabel" type="Label" parent="PromptContainer"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 0, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 32
+text = "Press E to Tee Up"
+horizontal_alignment = 1
+

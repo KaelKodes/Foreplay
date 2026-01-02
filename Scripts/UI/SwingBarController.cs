@@ -18,6 +18,7 @@ public partial class SwingBarController : CanvasLayer
 	// UI Buttons
 	private Button _backBtn;
 	private Button _resetBtn;
+	private Button _exitGolfBtn;
 	private Button _toggleWindBtn;
 
 	// Removed Camera Buttons per request
@@ -42,6 +43,8 @@ public partial class SwingBarController : CanvasLayer
 	private ColorRect _lockedPowerLine;
 	private ColorRect _lockedAccuracyLine;
 	private float _maxSpeed = 0.0f;
+
+	private Label _promptLabel;
 
 	// Bar mapping constants (0-100 Loop)
 	private const float BAR_MIN = 0.0f;
@@ -70,6 +73,7 @@ public partial class SwingBarController : CanvasLayer
 		// Buttons
 		_backBtn = GetNode<Button>("StatsPanel/BackBtn");
 		_resetBtn = GetNode<Button>("StatsPanel/ResetBtn");
+		_exitGolfBtn = GetNode<Button>("StatsPanel/ExitGolfBtn");
 		_toggleWindBtn = GetNode<Button>("StatsPanel/ToggleWindBtn");
 
 		_btnNextShot = GetNode<Button>("SwingContainer/BtnNextShot");
@@ -81,6 +85,8 @@ public partial class SwingBarController : CanvasLayer
 
 		_strokeLabel = GetNode<Label>("StatsPanel/StrokeLabel");
 
+		_promptLabel = GetNode<Label>("PromptContainer/PromptLabel");
+
 		// Hide confusing base attributes for now
 		GetNode<Label>("StatsPanel/PowerLabel").Visible = false;
 		GetNode<Label>("StatsPanel/ControlLabel").Visible = false;
@@ -90,6 +96,10 @@ public partial class SwingBarController : CanvasLayer
 		_swingSystem.Connect(SwingSystem.SignalName.ShotDistanceUpdated, new Callable(this, MethodName.OnShotDistanceUpdated));
 		_swingSystem.Connect(SwingSystem.SignalName.ShotResult, new Callable(this, MethodName.OnShotResult));
 		_swingSystem.Connect(SwingSystem.SignalName.StrokeUpdated, new Callable(this, MethodName.OnStrokeUpdated));
+
+		// Mode Signals
+		_swingSystem.Connect(SwingSystem.SignalName.ModeChanged, new Callable(this, MethodName.OnModeChanged));
+		_swingSystem.Connect(SwingSystem.SignalName.PromptChanged, new Callable(this, MethodName.OnPromptChanged));
 
 		if (_windSystem != null)
 		{
@@ -101,6 +111,7 @@ public partial class SwingBarController : CanvasLayer
 
 		_backBtn.Pressed += OnBackPressed;
 		_resetBtn.Pressed += OnResetPressed;
+		_exitGolfBtn.Pressed += OnExitGolfPressed;
 		_toggleWindBtn.Pressed += OnWindTogglePressed;
 		_btnNextShot.Pressed += OnNextShotPressed;
 
@@ -160,6 +171,7 @@ public partial class SwingBarController : CanvasLayer
 
 			bool isUIClick = _backBtn.GetGlobalRect().HasPoint(mouseBtn.Position) ||
 							 _resetBtn.GetGlobalRect().HasPoint(mouseBtn.Position) ||
+							 _exitGolfBtn.GetGlobalRect().HasPoint(mouseBtn.Position) ||
 							 _toggleWindBtn.GetGlobalRect().HasPoint(mouseBtn.Position) ||
 							 (_btnNextShot.Visible && _btnNextShot.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
 							 (_windSpeedSpin != null && _windSpeedSpin.GetGlobalRect().HasPoint(mouseBtn.Position)) ||
@@ -283,7 +295,12 @@ public partial class SwingBarController : CanvasLayer
 		_lockedPowerLine.Visible = false;
 		_lockedAccuracyLine.Visible = false;
 		_btnNextShot.Visible = false;
-		_swingSystem.ResetSwing();
+		_swingSystem.ResetMatch();
+	}
+
+	private void OnExitGolfPressed()
+	{
+		_swingSystem.ExitGolfMode();
 	}
 
 	private void OnSwingValuesUpdated(float currentBarValue, float lockedPower, float lockedAccuracy)
@@ -337,6 +354,22 @@ public partial class SwingBarController : CanvasLayer
 		float anger = _swingSystem.GetAnger();
 		float angerRatio = anger / 100.0f;
 		_powerBar.Modulate = new Color(1.0f, 1.0f - angerRatio * 0.5f, 1.0f - angerRatio * 0.5f);
+	}
+
+	private void OnModeChanged(bool isGolfing)
+	{
+		GetNode<Control>("SwingContainer").Visible = isGolfing;
+		GetNode<Control>("StatsPanel").Visible = isGolfing;
+		GetNode<Control>("WindContainer").Visible = isGolfing;
+		GetNode<Control>("SpinSelection").Visible = isGolfing;
+
+		if (isGolfing) _promptLabel.Visible = false;
+	}
+
+	private void OnPromptChanged(bool visible, string message)
+	{
+		_promptLabel.Visible = visible;
+		if (!string.IsNullOrEmpty(message)) _promptLabel.Text = message;
 	}
 
 	private void UpdateSpinIntent(Vector2 globalPos)

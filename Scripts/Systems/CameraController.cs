@@ -10,22 +10,23 @@ public partial class CameraController : Camera3D
     private Node3D _target;
     private bool _isFollowingBall = false;
 
+    // "Free Look" in this context acts as a "Detach/Debug" toggle.
+    // If true, we stop following the target.
+    private bool _canFreeLook = false;
+
+    private float _lookSensitivity = 0.3f;
+
     public override void _Ready()
     {
+        SetAsTopLevel(true); // Detach from parent transform to prevent spin
         if (TargetPath != null) _target = GetNode<Node3D>(TargetPath);
     }
 
-    public void Initialize(Vector3 pos, Vector3 rotDegrees)
-    {
-        // No-op for now, simplified
-    }
-
-    private bool _canFreeLook = false;
-    private float _lookSensitivity = 0.3f;
-
     public override void _Input(InputEvent @event)
     {
-        if (!_canFreeLook) return;
+        // Allow Orbit Rotation (Right Click) regardless of "Free Look" mode
+        // unless we strictly want to block it. 
+        // For "Walking Mode", we want Orbit.
 
         if (@event is InputEventMouseMotion motion && Input.IsMouseButtonPressed(MouseButton.Right))
         {
@@ -43,31 +44,52 @@ public partial class CameraController : Camera3D
     {
         if (_target == null) return;
 
-        // If Free Look is enabled, skip automatic following/positioning logic
-        // This allows the player to rotate the camera freely from its last position.
+        // If Debug/Free Look is enabled, skip automatic following logic
         if (_canFreeLook) return;
 
         if (_isFollowingBall)
         {
-            // Follow Ball Logic
-            // Ball moves along World +Z. Camera should be World -Z relative to ball to look forward.
-            // Offset (0, 10, -10) places camera behind and above.
+            // Ball Camera (High Angle Chase) - Logic remains "Chase" style for Ball
             Vector3 targetPos = _target.GlobalPosition + new Vector3(0, 10, -10);
             GlobalPosition = GlobalPosition.Lerp(targetPos, (float)delta * SmoothSpeed);
-            LookAt(_target.GlobalPosition);
+            LookAt(_target.GlobalPosition, Vector3.Up);
         }
         else
         {
-            // Tee View (Attached to PlayerPlaceholder)
-            // Maintain local offset and consistent downward tilt
-            Position = Position.Lerp(FollowOffset, (float)delta * SmoothSpeed);
-            RotationDegrees = RotationDegrees.Lerp(new Vector3(-20, 0, 0), (float)delta * SmoothSpeed);
+            // Walking Camera (Independent Orbit)
+            // Follow Target Position, but respect Camera's OWN Rotation.
+
+            float dist = FollowOffset.Z;
+            float height = FollowOffset.Y;
+
+            // Calculate position offset from Camera's current Basis
+            // This decouples us from the Player's rotation
+            Vector3 desiredOffset = new Vector3(0, height, dist);
+            Vector3 orbitPos = _target.GlobalPosition + (GlobalBasis * desiredOffset);
+
+            // Lerp Position for smoothness
+            GlobalPosition = GlobalPosition.Lerp(orbitPos, (float)delta * SmoothSpeed);
+        }
+    }
+
+    public void SetTarget(Node3D newTarget, bool snap = false)
+    {
+        _target = newTarget;
+        if (snap && _target != null)
+        {
+            // Instantly snap to valid orbit position
+            float dist = FollowOffset.Z;
+            float height = FollowOffset.Y;
+            Vector3 desiredOffset = new Vector3(0, height, dist);
+            // Use current rotation basis
+            GlobalPosition = _target.GlobalPosition + (GlobalBasis * desiredOffset);
         }
     }
 
     public void SetFollowing(bool following)
     {
         _isFollowingBall = following;
+        if (_isFollowingBall) _canFreeLook = false; // Ensure we move!
     }
 
     public void SetFreeLook(bool enabled)
@@ -75,5 +97,6 @@ public partial class CameraController : Camera3D
         _canFreeLook = enabled;
     }
 
-    public void ToggleMode(int mode) { } // Stub for compatibility
+    public void Initialize(Vector3 pos, Vector3 rotDegrees) { } // Stub
+    public void ToggleMode(int mode) { } // Stub
 }

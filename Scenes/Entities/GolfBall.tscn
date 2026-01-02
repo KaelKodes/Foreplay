@@ -13,6 +13,10 @@ radius = 0.021
 radius = 0.021
 height = 0.042
 
+[sub_resource type="StandardMaterial3D" id="StandardMaterial3D_ball"]
+albedo_color = Color(1, 1, 1, 1)
+roughness = 0.5
+
 [node name="GolfBall" type="RigidBody3D"]
 physics_material_override = SubResource("PhysicsMaterial_1")
 continuous_cd = true
@@ -26,3 +30,4 @@ shape = SubResource("SphereShape3D_1")
 
 [node name="MeshInstance3D" type="MeshInstance3D" parent="."]
 mesh = SubResource("SphereMesh_1")
+material_override = SubResource("StandardMaterial3D_ball")

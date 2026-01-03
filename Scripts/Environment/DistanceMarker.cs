@@ -16,6 +16,11 @@ public partial class DistanceMarker : InteractableObject
         base._Ready();
         _label = GetNodeOrNull<Label3D>("Board/Label3D") ?? GetNodeOrNull<Label3D>("Label3D");
 
+        CallDeferred(MethodName.FindTarget);
+    }
+
+    private void FindTarget()
+    {
         // Find all nodes in "targets" group
         var targets = GetTree().GetNodesInGroup("targets");
         if (targets.Count > 0)
@@ -38,6 +43,7 @@ public partial class DistanceMarker : InteractableObject
         }
 
         // Fallback to name search if no group targets found
+        if (_pin == null) _pin = GetTree().CurrentScene.FindChild("GreenPin", true, false) as Node3D;
         if (_pin == null) _pin = GetTree().CurrentScene.FindChild("VisualTee", true, false) as Node3D;
         if (_pin == null) _pin = GetTree().CurrentScene.FindChild("TeeBox", true, false) as Node3D;
         if (_pin == null) _pin = GetTree().CurrentScene.FindChild("Pin", true, false) as Node3D;
@@ -45,11 +51,13 @@ public partial class DistanceMarker : InteractableObject
 
         if (_pin == null)
         {
+            // Silent fail initially, retry later? 
+            // Usually during load, all nodes should be present by Deferred frame.
             GD.PrintErr($"[DistanceMarker] {Name}: Could not find Pin or Tee target in scene!");
         }
         else
         {
-            GD.Print($"[DistanceMarker] {Name}: Target found -> {_pin.Name}");
+            // GD.Print($"[DistanceMarker] {Name}: Target found -> {_pin.Name}");
             UpdateDistance();
         }
 

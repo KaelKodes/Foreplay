@@ -328,6 +328,7 @@ public partial class SwingSystem : Node
 		_lockedPower = -1.0f;
 		_lockedAccuracy = -1.0f;
 		_ball.Reset();
+		_ball.GlobalPosition = TeePosition + new Vector3(0, 0.2f, 0);
 		_markerManager.UpdateBallIndicator(false, Vector3.Zero, 0);
 		SetPlayerStance();
 
@@ -364,5 +365,20 @@ public partial class SwingSystem : Node
 		_currentPlayer.GlobalPosition = stancePos;
 		_currentPlayer.LookAt(ballPos, Vector3.Up);
 		_currentPlayer.RotationDegrees = new Vector3(0, _currentPlayer.RotationDegrees.Y, 0);
+	}
+
+	public void SetTeePosition(Vector3 newPos)
+	{
+		TeePosition = newPos;
+
+		// If we haven't started playing (Stroke 1), snap everything to the tee immediately.
+		// This fixes the "Launch from nowhere" bug on scene load.
+		if (_strokeCount == 1 && _stage == SwingStage.Idle && _ball != null)
+		{
+			_ball.Reset(); // Stop physics
+			_ball.GlobalPosition = TeePosition + new Vector3(0, 0.2f, 0);
+			_markerManager.UpdateBallIndicator(false, Vector3.Zero, 0);
+			SetPlayerStance();
+		}
 	}
 }

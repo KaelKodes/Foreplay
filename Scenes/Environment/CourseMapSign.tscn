@@ -1,0 +1,57 @@
+[gd_scene load_steps=6 format=3 uid="uid://clk7b5ow7sl57"]
+
+[ext_resource type="Script" path="res://Scripts/Environment/CourseMapSign.cs" id="1_mapscript"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_Post"]
+albedo_color = Color(0.3, 0.2, 0.1, 1.0)
+
+[sub_resource type="CylinderMesh" id="Mesh_Post"]
+material = SubResource("Mat_Post")
+top_radius = 0.05
+bottom_radius = 0.05
+height = 1.5
+
+[sub_resource type="BoxMesh" id="Mesh_Board"]
+size = Vector3(2.0, 1.5, 0.1)
+
+[sub_resource type="QuadMesh" id="Mesh_MapFace"]
+size = Vector2(1.9, 1.4)
+
+[sub_resource type="BoxShape3D" id="BoxShape3D_Sign"]
+size = Vector3(2.0, 2.5, 0.5)
+
+[node name="CourseMapSign" type="Node3D"]
+script = ExtResource("1_mapscript")
+ObjectName = "Course Map"
+
+[node name="PostLeft" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -0.8, 0.75, 0)
+mesh = SubResource("Mesh_Post")
+
+[node name="PostRight" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0.8, 0.75, 0)
+mesh = SubResource("Mesh_Post")
+
+[node name="Board" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.5, 0.06)
+mesh = SubResource("Mesh_Board")
+
+[node name="MapFace" type="MeshInstance3D" parent="Board"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0, 0.055)
+mesh = SubResource("Mesh_MapFace")
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+collision_layer = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.25, 0)
+shape = SubResource("BoxShape3D_Sign")
+
+[node name="SubViewport" type="SubViewport" parent="."]
+size = Vector2i(512, 384)
+render_target_update_mode = 4
+
+[node name="Camera3D" type="Camera3D" parent="SubViewport"]
+transform = Transform3D(1, 0, 0, 0, -4.37114e-08, 1, 0, -1, -4.37114e-08, 0, 100, 0)
+projection = 1
+size = 200.0

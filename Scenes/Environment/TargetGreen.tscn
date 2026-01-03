@@ -4,32 +4,37 @@
 [ext_resource type="PackedScene" uid="uid://pin7q8q8q8q8" path="res://Scenes/Environment/Pin.tscn" id="2_pin"]
 
 [sub_resource type="CylinderShape3D" id="Shape_Green"]
-height = 0.2
+height = 2.0
 radius = 15.0
+
+[sub_resource type="StandardMaterial3D" id="Mat_GreenCup"]
+albedo_color = Color(0.13, 0.34, 0.28, 1)
+roughness = 0.8
 
 [node name="TargetGreen" type="Area3D"]
 script = ExtResource("1_script")
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.8, 0)
 shape = SubResource("Shape_Green")
 
 [node name="GreenBase" type="CSGCylinder3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.8, 0)
 use_collision = true
+collision_layer = 2
 radius = 15.0
-height = 0.2
-material_override = null
+height = 2.0
+material_override = SubResource("Mat_GreenCup")
 sides = 32
 
 [node name="HoleCutout" type="CSGCylinder3D" parent="GreenBase"]
 operation = 2
 radius = 0.108
-height = 0.3
+height = 2.2
 sides = 16
 
 [node name="CupVisual" type="CSGCylinder3D" parent="GreenBase"]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, -0.09, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.91, 0)
 radius = 0.105
 height = 0.01
 sides = 16

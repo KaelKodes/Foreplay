@@ -1,0 +1,36 @@
+[gd_scene load_steps=5 format=3 uid="uid://dwqtcqjqyxqp6"]
+
+[ext_resource type="Script" path="res://Scripts/Environment/TeeBox.cs" id="1_script"]
+
+[sub_resource type="StandardMaterial3D" id="Mat_Marker"]
+albedo_color = Color(0.9, 0.9, 0.9, 1)
+roughness = 0.5
+
+[sub_resource type="SphereMesh" id="Mesh_Marker"]
+material = SubResource("Mat_Marker")
+radius = 0.1
+height = 0.2
+
+[sub_resource type="BoxShape3D" id="Shape_Box"]
+size = Vector3(2.2, 0.2, 1.0)
+
+[node name="TeeBox" type="Node3D"]
+script = ExtResource("1_script")
+ObjectName = "Tee Box"
+
+[node name="InteractionBody" type="StaticBody3D" parent="."]
+collision_layer = 2
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="InteractionBody"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 0.1, 0)
+shape = SubResource("Shape_Box")
+
+[node name="Marker_L" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, -1, 0, 0)
+mesh = SubResource("Mesh_Marker")
+
+[node name="Marker_R" type="MeshInstance3D" parent="."]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0)
+mesh = SubResource("Mesh_Marker")
+
+[node name="VisualTee" type="Node3D" parent="." groups=["targets"]]

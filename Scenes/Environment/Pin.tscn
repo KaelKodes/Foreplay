@@ -1,6 +1,6 @@
-[gd_scene load_steps=5 format=3 uid="uid://pin7q8q8q8q8"]
+[gd_scene load_steps=6 format=3 uid="uid://pin7q8q8q8q8"]
 
-[ext_resource type="Script" path="res://Scripts/Environment/Pin.cs" id="1_pin_script"]
+[ext_resource type="Script" uid="uid://32lyy0a07rp2" path="res://Scripts/Environment/Pin.cs" id="1_pin_script"]
 
 [sub_resource type="StandardMaterial3D" id="Mat_Pole"]
 albedo_color = Color(0.9, 0.9, 0.9, 1)
@@ -10,11 +10,10 @@ roughness = 0.5
 material = SubResource("Mat_Pole")
 top_radius = 0.02
 bottom_radius = 0.02
-height = 2.0
 
 [sub_resource type="StandardMaterial3D" id="Mat_Flag"]
-albedo_color = Color(0.9, 0.1, 0.1, 1)
 cull_mode = 2
+albedo_color = Color(0.9, 0.1, 0.1, 1)
 
 [sub_resource type="PrismMesh" id="Mesh_Flag"]
 material = SubResource("Mat_Flag")
@@ -25,12 +24,12 @@ size = Vector3(0.5, 0.4, 0.05)
 script = ExtResource("1_pin_script")
 
 [node name="Pole" type="MeshInstance3D" parent="."]
-transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.0, 0)
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
 mesh = SubResource("Mesh_Pole")
 
 [node name="Flag" type="Node3D" parent="."]
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1.8, 0)
 
 [node name="FlagMesh" type="MeshInstance3D" parent="Flag"]
-transform = Transform3D(-4.37114e-08, 0, 1, 0, 1, 0, -1, 0, -4.37114e-08, 0.25, 0, 0)
+transform = Transform3D(-1, 0, 0.00022687018, 0, 1, 0, -0.00022687018, 0, -1, 0.25, 0, 0)
 mesh = SubResource("Mesh_Flag")

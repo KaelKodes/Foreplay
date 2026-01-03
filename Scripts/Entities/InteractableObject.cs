@@ -12,6 +12,10 @@ public partial class InteractableObject : Node3D
     private MeshInstance3D _mesh;
     private MeshInstance3D _gizmoRing;
 
+    // Interaction API
+    public virtual void OnInteract(PlayerController player) { }
+    public virtual string GetInteractionPrompt() { return ""; }
+
     public override void _Ready()
     {
         // Try to find a mesh for highlighting

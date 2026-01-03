@@ -285,7 +285,8 @@ public partial class BallController : RigidBody3D
         LinearVelocity = Vector3.Zero;
         AngularVelocity = Vector3.Zero;
         _spinVector = Vector3.Zero;
-        GlobalPosition = new Vector3(49.51819f, 1.0f, -59.909077f);
+        _spinVector = Vector3.Zero;
+        // GlobalPosition is now handled by SwingSystem to respect TeePosition
         Freeze = false; // Let it fall/settle naturally like first load!
         _hasCarried = false;
         _flightTimer = 0.0f;

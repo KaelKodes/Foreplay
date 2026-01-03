@@ -78,14 +78,21 @@ public partial class GolfHUDController : Control
 
 		if (_windSpeedSpin != null)
 		{
-			_windSpeedSpin.ValueChanged += (val) => _windSystem?.SetWindSpeed((float)val);
-			_windSpeedSpin.GetLineEdit().FocusMode = FocusModeEnum.None;
+			_windSpeedSpin.ValueChanged += (val) =>
+			{
+				_windSystem?.SetWindSpeed((float)val);
+				_windSpeedSpin.GetLineEdit().ReleaseFocus();
+			};
 		}
 
 		if (_powerOverrideSpin != null)
 		{
-			_powerOverrideSpin.ValueChanged += (val) => _swingSystem?.SetPowerOverride((float)val);
-			_powerOverrideSpin.GetLineEdit().FocusMode = FocusModeEnum.None;
+			_powerOverrideSpin.ValueChanged += (val) =>
+			{
+				_swingSystem?.SetPowerOverride((float)val);
+				_powerOverrideSpin.GetLineEdit().ReleaseFocus();
+			};
+
 			if (_swingSystem != null)
 			{
 				_powerOverrideSpin.Value = _swingSystem.GetEstimatedPower();

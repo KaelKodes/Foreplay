@@ -278,8 +278,9 @@ public partial class MainHUDController : CanvasLayer
 			switch (objectId)
 			{
 				case "DistanceSign": scenePath = "res://Scenes/Environment/DistanceMarker.tscn"; break;
-				case "TeePin": scenePath = "res://Scenes/Environment/DistanceMarker.tscn"; break;
+				case "TeePin": scenePath = "res://Scenes/Environment/DistanceMarker.tscn"; break; // TeePin logic might differ, assuming placeholder
 				case "Pin": scenePath = "res://Scenes/Environment/DistanceMarker.tscn"; break;
+				case "CourseMap": scenePath = "res://Scenes/Environment/CourseMapSign.tscn"; break;
 			}
 		}
 
@@ -334,6 +335,7 @@ public partial class MainHUDController : CanvasLayer
 		_allAssets.Add(new ObjectAsset { Name = "TeePin", Category = "Utility", Path = "" });
 		_allAssets.Add(new ObjectAsset { Name = "Pin", Category = "Utility", Path = "" });
 		_allAssets.Add(new ObjectAsset { Name = "DistanceSign", Category = "Utility", Path = "" });
+		_allAssets.Add(new ObjectAsset { Name = "CourseMap", Category = "Utility", Path = "" });
 
 		string path = "res://Assets/Textures/Objects/";
 		using var dir = DirAccess.Open(path);
@@ -393,6 +395,89 @@ public partial class MainHUDController : CanvasLayer
 			btn.CustomMinimumSize = new Vector2(150, 40);
 			btn.Pressed += () => SelectObjectToPlace(asset.Name);
 			_objectGrid.AddChild(btn);
+		}
+	}
+
+	private FileDialog _saveDialog;
+	private FileDialog _loadDialog;
+
+	public void ShowSaveLoadMenu()
+	{
+		if (_saveDialog == null) SetupFileDialogs();
+
+		// Simple Popup Menu to choose Save or Load
+		var popup = new PopupMenu();
+		popup.AddItem("Save Course");
+		popup.AddItem("Load Course");
+		popup.IdPressed += (id) =>
+		{
+			if (id == 0) _saveDialog.PopupCentered(new Vector2I(600, 400));
+			else _loadDialog.PopupCentered(new Vector2I(600, 400));
+		};
+
+		AddChild(popup);
+		popup.PopupCentered(new Vector2I(200, 100)); // Show immediately
+	}
+
+	private void SetupFileDialogs()
+	{
+		_saveDialog = new FileDialog();
+		_saveDialog.FileMode = FileDialog.FileModeEnum.SaveFile;
+		_saveDialog.Access = FileDialog.AccessEnum.Userdata;
+		_saveDialog.Filters = new string[] { "*.json" };
+		_saveDialog.CurrentDir = "user://courses";
+		_saveDialog.FileSelected += OnSaveFileSelected;
+		AddChild(_saveDialog);
+
+		_loadDialog = new FileDialog();
+		_loadDialog.FileMode = FileDialog.FileModeEnum.OpenFile;
+		_loadDialog.Access = FileDialog.AccessEnum.Userdata;
+		_loadDialog.Filters = new string[] { "*.json" };
+		_loadDialog.CurrentDir = "user://courses";
+		_loadDialog.FileSelected += OnLoadFileSelected;
+		AddChild(_loadDialog);
+	}
+
+	private void OnSaveFileSelected(string path)
+	{
+		// Extract filename from path
+		string filename = System.IO.Path.GetFileNameWithoutExtension(path);
+
+		// Get Scene Data
+		var terrain = GetTree().GetFirstNodeInGroup("terrain") as HeightmapTerrain;
+		var root = GetTree().CurrentScene;
+
+		CoursePersistenceManager.Instance.SaveCourse(filename, terrain, root);
+
+		// Feedback
+		if (_swingSystem != null)
+		{
+			_swingSystem.SetPrompt(true, $"SAVED: {filename}");
+			GetTree().CreateTimer(2.0f).Connect("timeout", Callable.From(() => _swingSystem.SetPrompt(false)));
+		}
+	}
+
+	private void OnLoadFileSelected(string path)
+	{
+		string filename = System.IO.Path.GetFileNameWithoutExtension(path);
+
+		// Get Scene Data
+		var terrain = GetTree().GetFirstNodeInGroup("terrain") as HeightmapTerrain;
+		var root = GetTree().CurrentScene;
+
+		bool success = CoursePersistenceManager.Instance.LoadCourse(filename, terrain, root);
+
+		if (_swingSystem != null)
+		{
+			if (success)
+			{
+				_swingSystem.SetPrompt(true, $"LOADED: {filename}");
+			}
+			else
+			{
+				_swingSystem.SetPrompt(true, $"FAILED TO LOAD: {filename}");
+			}
+			GetTree().CreateTimer(2.0f).Connect("timeout", Callable.From(() => _swingSystem.SetPrompt(false)));
 		}
 	}
 }

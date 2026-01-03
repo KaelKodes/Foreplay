@@ -48,6 +48,7 @@ public partial class MenuPhysicsHelper : Node
         box.Size = new Vector3(viewWidth * 2.0f, 1.0f, 10.0f);
         shape.Shape = box;
 
+        floor.CollisionLayer = 2; // Match GolfBall mask
         floor.AddChild(shape);
         CollidersContainer.AddChild(floor);
 
@@ -165,6 +166,7 @@ public partial class MenuPhysicsHelper : Node
         box.Size = size3D;
         shape.Shape = box;
 
+        body.CollisionLayer = 2; // Match GolfBall mask
         body.AddChild(shape);
         CollidersContainer.AddChild(body);
         body.GlobalPosition = pos3D;

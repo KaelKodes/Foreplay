@@ -277,8 +277,64 @@ public partial class PlayerController : CharacterBody3D
         }
         else
         {
+            // Generic Interaction Check
+            InteractableObject hitObj = CheckInteractionForwardRaycast();
+            if (hitObj != null)
+            {
+                float dist = GlobalPosition.DistanceTo(hitObj.GlobalPosition);
+                // GD.Print($"IO Found: {hitObj.Name}, Dist: {dist}");
+
+                if (dist < 5.0f)
+                {
+                    string prompt = hitObj.GetInteractionPrompt();
+                    if (!string.IsNullOrEmpty(prompt))
+                    {
+                        _swingSystem.SetPrompt(true, prompt);
+                        if (Input.IsKeyPressed(Key.E))
+                        {
+                            hitObj.OnInteract(this);
+                        }
+                        return; // Priority over clearing
+                    }
+                }
+            }
+
             _swingSystem.SetPrompt(false);
         }
+    }
+
+    private InteractableObject CheckInteractionForwardRaycast()
+    {
+        // Cast from Player Body forward, not Camera
+        var spaceState = GetWorld3D().DirectSpaceState;
+
+        // Origin: Approx Head Height
+        var from = GlobalPosition + new Vector3(0, 1.5f, 0);
+        // Direction: Player Forward (+Z because Basis.Z seems to be Forward for this mesh?)
+        var to = from + GlobalTransform.Basis.Z * 3.0f; // 3m reach
+
+        var query = PhysicsRayQueryParameters3D.Create(from, to);
+        query.CollisionMask = 3; // Layers 1 and 2
+        query.Exclude = new Godot.Collections.Array<Rid> { GetRid() };
+
+        var result = spaceState.IntersectRay(query);
+
+        if (result.Count > 0)
+        {
+            var hitObj = (Node)result["collider"];
+            // GD.Print($"Hit: {((Node)hitObj).Name}");
+
+            if (hitObj is Node colliderNode)
+            {
+                Node n = colliderNode;
+                while (n != null)
+                {
+                    if (n is InteractableObject io) return io;
+                    n = n.GetParent();
+                }
+            }
+        }
+        return null;
     }
 
     private void HandleVehicleDetection()

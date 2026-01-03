@@ -12,6 +12,18 @@ public partial class HeightmapTerrain : StaticBody3D
 	private float[,] _heightData;
 	private int[,] _terrainTypeData;
 
+	public void SetData(int x, int z, float height, int type)
+	{
+		if (x >= 0 && x <= GridWidth && z >= 0 && z <= GridDepth)
+		{
+			_heightData[x, z] = height;
+			_terrainTypeData[x, z] = type;
+		}
+	}
+
+	public float[,] GetHeightData() => _heightData;
+	public int[,] GetTerrainTypeData() => _terrainTypeData;
+
 	// Components
 	private MeshInstance3D _meshInstance;
 	private CollisionShape3D _collisionShape;

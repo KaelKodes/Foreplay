@@ -135,6 +135,14 @@ public partial class PlayerController : CharacterBody3D
         // "Mouse Aim": Only sync if ball is stationary (Idle or choosing power/acc)
         if (_swingSystem.CurrentStage == SwingStage.Executing || _swingSystem.CurrentStage == SwingStage.ShotComplete) return;
 
+        // Cycle Clubs with Arrow Keys (No Shift)
+        if (Input.IsActionJustPressed("ui_up") && !Input.IsKeyPressed(Key.Shift)) _swingSystem.ChangeClub(-1);
+        if (Input.IsActionJustPressed("ui_down") && !Input.IsKeyPressed(Key.Shift)) _swingSystem.ChangeClub(1);
+
+        // Adjust AoA with Shift + Up/Down
+        if (Input.IsActionJustPressed("ui_up") && Input.IsKeyPressed(Key.Shift)) _swingSystem.SetAoAOffset(_swingSystem.AoAOffset + 1.0f);
+        if (Input.IsActionJustPressed("ui_down") && Input.IsKeyPressed(Key.Shift)) _swingSystem.SetAoAOffset(_swingSystem.AoAOffset - 1.0f);
+
         // Continuously sync player position/rotation to camera's horizontal heading.
         Vector3 ballPos = _swingSystem.BallPosition;
         Vector3 camForward = -_camera.GlobalTransform.Basis.Z;

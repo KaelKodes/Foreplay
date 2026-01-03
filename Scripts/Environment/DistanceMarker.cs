@@ -7,7 +7,7 @@ public partial class DistanceMarker : InteractableObject
     [Export] public Color TextColor = Colors.Black;
     [Export] public bool DynamicDistance = true;
 
-    private Node3D _pin;
+    private Node3D _origin;
     private Label3D _label;
     private Vector3 _lastPos;
 
@@ -21,43 +21,31 @@ public partial class DistanceMarker : InteractableObject
 
     private void FindTarget()
     {
-        // Find all nodes in "targets" group
-        var targets = GetTree().GetNodesInGroup("targets");
-        if (targets.Count > 0)
+        // Strictly prioritize Tee for range markers
+        if (_origin == null) _origin = GetTree().CurrentScene.FindChild("VisualTee", true, false) as Node3D;
+        if (_origin == null) _origin = GetTree().CurrentScene.FindChild("TeeBox", true, false) as Node3D;
+        if (_origin == null) _origin = GetTree().CurrentScene.FindChild("Tee", true, false) as Node3D;
+
+        // Fallback for custom placed tees in building mode
+        if (_origin == null)
         {
-            Node3D best = null;
-            float minDist = float.MaxValue;
+            var targets = GetTree().GetNodesInGroup("targets");
             foreach (Node n in targets)
             {
-                if (n is Node3D n3d)
+                if (n is Node3D n3d && n.Name.ToString().ToLower().Contains("tee"))
                 {
-                    float d = GlobalPosition.DistanceSquaredTo(n3d.GlobalPosition);
-                    if (d < minDist)
-                    {
-                        minDist = d;
-                        best = n3d;
-                    }
+                    _origin = n3d;
+                    break;
                 }
             }
-            _pin = best;
         }
 
-        // Fallback to name search if no group targets found
-        if (_pin == null) _pin = GetTree().CurrentScene.FindChild("GreenPin", true, false) as Node3D;
-        if (_pin == null) _pin = GetTree().CurrentScene.FindChild("VisualTee", true, false) as Node3D;
-        if (_pin == null) _pin = GetTree().CurrentScene.FindChild("TeeBox", true, false) as Node3D;
-        if (_pin == null) _pin = GetTree().CurrentScene.FindChild("Pin", true, false) as Node3D;
-        if (_pin == null) _pin = GetTree().CurrentScene.FindChild("Tee", true, false) as Node3D;
-
-        if (_pin == null)
+        if (_origin == null)
         {
-            // Silent fail initially, retry later? 
-            // Usually during load, all nodes should be present by Deferred frame.
-            GD.PrintErr($"[DistanceMarker] {Name}: Could not find Pin or Tee target in scene!");
+            GD.PrintErr($"[DistanceMarker] {Name}: Could not find Tee origin in scene!");
         }
         else
         {
-            // GD.Print($"[DistanceMarker] {Name}: Target found -> {_pin.Name}");
             UpdateDistance();
         }
 
@@ -70,11 +58,11 @@ public partial class DistanceMarker : InteractableObject
 
     public void UpdateDistance()
     {
-        if (!DynamicDistance || _pin == null || _label == null) return;
+        if (!DynamicDistance || _origin == null || _label == null) return;
 
-        float dist = GlobalPosition.DistanceTo(_pin.GlobalPosition);
-        // Using "x2 logic" for perceived yards as requested
-        float yards = dist * 2.0f;
+        float dist = GlobalPosition.DistanceTo(_origin.GlobalPosition);
+        // Using locked ratio from constants
+        float yards = dist * Golf.GolfConstants.UNIT_RATIO;
 
         _label.Text = $"{Mathf.RoundToInt(yards)}y";
     }

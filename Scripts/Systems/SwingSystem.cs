@@ -41,6 +41,13 @@ public partial class SwingSystem : Node
 	private Vector3 _targetPosition = new Vector3(0, 0, 548.64f);
 	private PlayerController _currentPlayer;
 
+	// Club System
+	[Export] public GolfClubSet PlayerClubSet;
+	private int _selectedClubIndex = 0;
+	private float _aoaOffset = 0.0f; // Angle of Attack (-5 to +5 degrees)
+	public float AoAOffset => _aoaOffset;
+	public GolfClub SelectedClub => (PlayerClubSet != null && PlayerClubSet.Clubs.Count > 0) ? PlayerClubSet.Clubs[_selectedClubIndex] : null;
+
 	[Signal] public delegate void SwingStageChangedEventHandler(int newStage);
 	[Signal] public delegate void SwingValuesUpdatedEventHandler(float currentBarValue, float lockedPower, float lockedAccuracy);
 	[Signal] public delegate void ShotDistanceUpdatedEventHandler(float carry, float total);
@@ -48,6 +55,7 @@ public partial class SwingSystem : Node
 	[Signal] public delegate void ModeChangedEventHandler(bool isGolfing);
 	[Signal] public delegate void PromptChangedEventHandler(bool visible, string message);
 	[Signal] public delegate void StrokeUpdatedEventHandler(int stroke);
+	[Signal] public delegate void ClubChangedEventHandler(string clubName, float loft, float aoa);
 
 	public Vector3 BallPosition => _ball?.GlobalPosition ?? Vector3.Zero;
 	public SwingStage CurrentStage => _stage;
@@ -107,7 +115,41 @@ public partial class SwingSystem : Node
 			if (pin != null) pin.AddToGroup("targets");
 		}
 
+		InitializeBeginnerSet();
 		CallDeferred(MethodName.ExitGolfMode);
+	}
+
+	private void InitializeBeginnerSet()
+	{
+		if (PlayerClubSet != null) return;
+
+		PlayerClubSet = new GolfClubSet();
+		PlayerClubSet.ClubSetName = "Beginner Set";
+
+		// Beginner Bag - Recalibrated for 1:2 HUD Ratio (1m = 2y)
+		// name, type, loft, powerMult, forgiveness (1.0 = standard, 1.5 = high MOI)
+		AddClub("Driver", ClubType.Driver, 11.5f, 1.0f, 1.5f);        // Baseline: ~105m -> 210y
+		AddClub("3 Wood", ClubType.Wood, 15.5f, 0.92f, 1.4f);        // ~190y
+		AddClub("4 Hybrid", ClubType.Hybrid, 23.0f, 0.85f, 1.8f);    // ~168y
+		AddClub("5 Hybrid", ClubType.Hybrid, 26.0f, 0.82f, 1.8f);    // ~158y
+		AddClub("6 Iron", ClubType.Iron, 29.0f, 0.77f, 1.3f);        // ~145y
+		AddClub("7 Iron", ClubType.Iron, 33.0f, 0.72f, 1.3f);        // ~130y
+		AddClub("8 Iron", ClubType.Iron, 37.0f, 0.67f, 1.3f);        // ~115y
+		AddClub("9 Iron", ClubType.Iron, 41.0f, 0.62f, 1.3f);        // ~100y
+		AddClub("PW", ClubType.Wedge, 45.0f, 0.58f, 1.2f);           // ~92y
+		AddClub("SW", ClubType.Wedge, 55.0f, 0.50f, 1.5f);           // ~67y
+		AddClub("Putter", ClubType.Putter, 4.0f, 0.15f, 2.0f);
+	}
+
+	private void AddClub(string name, ClubType type, float loft, float power, float forgiveness = 1.0f)
+	{
+		var club = new GolfClub();
+		club.ClubName = name;
+		club.Type = type;
+		club.LoftDegrees = loft;
+		club.PowerMultiplier = power;
+		club.SweetSpotSize = forgiveness;
+		PlayerClubSet.Clubs.Add(club);
 	}
 
 	public void UpdateTeePosition(Vector3 pos)
@@ -272,7 +314,9 @@ public partial class SwingSystem : Node
 			PlayerStats = _statsService.PlayerStats,
 			CurrentLie = _lieSystem.GetCurrentLie(_ball.GlobalPosition),
 			CameraCameraForward = -GetViewport().GetCamera3D().GlobalTransform.Basis.Z,
-			IsRightHanded = _statsService.PlayerStats.IsRightHanded
+			IsRightHanded = _statsService.PlayerStats.IsRightHanded,
+			SelectedClub = SelectedClub, // Added
+			AoAOffset = _aoaOffset        // Added
 		};
 
 		var result = ShotPhysics.CalculateShot(shotParams);
@@ -339,6 +383,21 @@ public partial class SwingSystem : Node
 	}
 
 	public void SetSpinIntent(Vector2 intent) { if (_stage == SwingStage.Idle) _spinIntent = intent; }
+
+	public void ChangeClub(int direction)
+	{
+		if (PlayerClubSet == null || PlayerClubSet.Clubs.Count == 0) return;
+		_selectedClubIndex = Mathf.PosMod(_selectedClubIndex + direction, PlayerClubSet.Clubs.Count);
+		EmitSignal(SignalName.ClubChanged, SelectedClub.ClubName, SelectedClub.LoftDegrees, _aoaOffset);
+		GD.Print($"Club changed to: {SelectedClub.ClubName}");
+	}
+
+	public void SetAoAOffset(float offset)
+	{
+		_aoaOffset = Mathf.Clamp(offset, -5.0f, 5.0f);
+		EmitSignal(SignalName.ClubChanged, SelectedClub.ClubName, SelectedClub.LoftDegrees, _aoaOffset);
+	}
+
 	public float GetEstimatedPower()
 	{
 		float val = (_powerOverride > 0) ? _powerOverride : _statsService.PlayerStats.Power;

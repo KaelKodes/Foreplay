@@ -12,6 +12,8 @@ public static class ShotPhysics
         public BallLie CurrentLie;
         public Vector3 CameraCameraForward;
         public bool IsRightHanded;
+        public GolfClub SelectedClub; // Added
+        public float AoAOffset;       // Added (Angle of Attack)
     }
 
     public struct ShotResult
@@ -23,28 +25,43 @@ public static class ShotPhysics
     public static ShotResult CalculateShot(ShotParams p)
     {
         Vector3 direction = p.CameraCameraForward;
-        direction.Y = 0.23f + p.CurrentLie.LaunchAngleBonus;
+
+        // Use Club Loft + AoA Offset
+        float totalLoft = p.SelectedClub != null ? p.SelectedClub.LoftDegrees : 15.0f;
+        totalLoft += p.AoAOffset;
+
+        // Convert degrees to the direction.Y ratio (approx)
+        // Since Y is normalized, Sin(Loft) is the Y component.
+        float loftRad = Mathf.DegToRad(totalLoft);
+        direction.Y = Mathf.Sin(loftRad) + p.CurrentLie.LaunchAngleBonus;
         direction = direction.Normalized();
 
         float powerToUse = (p.PowerOverride > 0) ? p.PowerOverride : p.PlayerStats.Power;
         float powerStatMult = powerToUse / 10.0f;
-        float baseVelocity = 82.0f;
-        float normalizedPower = p.PowerValue / 94.0f;
-        float launchPower = normalizedPower * baseVelocity * powerStatMult * p.CurrentLie.PowerEfficiency;
 
-        float accuracyError = p.AccuracyValue - 25.0f;
+        float baseVelocity = Golf.GolfConstants.BASE_VELOCITY;
+        float clubPowerMult = p.SelectedClub != null ? p.SelectedClub.PowerMultiplier : 1.0f;
+
+        float normalizedPower = p.PowerValue / Golf.GolfConstants.PEAK_POWER_VALUE;
+        float launchPower = normalizedPower * baseVelocity * powerStatMult * clubPowerMult * p.CurrentLie.PowerEfficiency;
+
+        float accuracyError = p.AccuracyValue - Golf.GolfConstants.PERFECT_ACCURACY_VALUE;
+
+        // Apply Club Forgiveness (MOI)
+        float forgiveness = p.SelectedClub != null ? p.SelectedClub.SweetSpotSize : 1.0f;
+        accuracyError /= forgiveness;
 
         // Overpower Penalty logic
-        if (p.PowerValue > 94.0f)
+        if (p.PowerValue > Golf.GolfConstants.PEAK_POWER_VALUE)
         {
-            float overpowerFactor = 1.0f + (p.PowerValue - 94.0f) * 0.15f; // Exponential-ish multiplier for errors
-            accuracyError *= overpowerFactor;
+            float overpowerFactor = 1.0f + (p.PowerValue - Golf.GolfConstants.PEAK_POWER_VALUE) * 0.15f; // Exponential-ish multiplier for errors
+            accuracyError *= (overpowerFactor / forgiveness); // Offset slightly by forgiveness
             // Also slightly boost launch power but with high variance/risk
-            launchPower *= (1.0f + (p.PowerValue - 94.0f) * 0.01f);
+            launchPower *= (1.0f + (p.PowerValue - Golf.GolfConstants.PEAK_POWER_VALUE) * 0.01f);
         }
 
         float controlMult = 1.0f / (p.PlayerStats.Control / 10.0f);
-        float shapingSpin = accuracyError * 35.0f * controlMult;
+        float shapingSpin = (accuracyError * 35.0f * controlMult) / forgiveness;
         if (!p.IsRightHanded) shapingSpin *= -1;
 
         float timingOffset = -accuracyError * 0.056f;
@@ -53,7 +70,9 @@ public static class ShotPhysics
         velocity = velocity.Rotated(Vector3.Up, timingOffset);
 
         float touchMult = p.PlayerStats.Touch / 10.0f;
-        float baselineBackspin = 310.0f * (normalizedPower * powerStatMult) * p.CurrentLie.SpinModifier;
+        float clubSpinMult = p.SelectedClub != null ? p.SelectedClub.SpinMultiplier : 1.0f;
+
+        float baselineBackspin = 310.0f * (normalizedPower * powerStatMult) * p.CurrentLie.SpinModifier * clubSpinMult;
         float totalBackspin = baselineBackspin + (p.SpinIntent.Y * 60.0f * touchMult);
         float totalSidespin = (shapingSpin + (p.SpinIntent.X * 40.0f * touchMult)) * p.CurrentLie.SpinModifier;
 

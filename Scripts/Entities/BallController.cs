@@ -88,7 +88,7 @@ public partial class BallController : RigidBody3D
         _settleTimer = 0.0f;
         Freeze = true;
         float total = _launchPos.DistanceTo(new Vector3(GlobalPosition.X, _launchPos.Y, GlobalPosition.Z));
-        EmitSignal(SignalName.BallSettled, total * 2.0f); // Restore 2.0x Visual Scale
+        EmitSignal(SignalName.BallSettled, total * Golf.GolfConstants.UNIT_RATIO);
     }
 
     public void Launch(Vector3 velocity, Vector3 spin)
@@ -131,7 +131,7 @@ public partial class BallController : RigidBody3D
         ApplyAerodynamics(state, !onGround);
 
         // ALWAYS apply gravity if custom integrator is on
-        state.LinearVelocity += state.TotalGravity * dt;
+        state.LinearVelocity += (state.TotalGravity.Normalized() * Golf.GolfConstants.GRAVITY) * dt;
 
         if (onGround)
         {
@@ -140,7 +140,7 @@ public partial class BallController : RigidBody3D
             {
                 _hasCarried = true;
                 float carry = _launchPos.DistanceTo(new Vector3(pos.X, _launchPos.Y, pos.Z));
-                EmitSignal(SignalName.BallCarried, carry * 2.0f); // Restore 2.0x Visual Scale
+                EmitSignal(SignalName.BallCarried, carry * Golf.GolfConstants.UNIT_RATIO);
                 _state = BallState.Rolling;
             }
 

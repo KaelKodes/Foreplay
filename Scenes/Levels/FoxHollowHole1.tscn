@@ -1,4 +1,4 @@
-[gd_scene load_steps=10 format=3 uid="uid://b5ag1w5xrk4pg"]
+[gd_scene load_steps=19 format=3 uid="uid://d2fcd536x0n18"]
 
 [ext_resource type="Script" uid="uid://dm68lcvq6qel5" path="res://Scripts/Systems/SwingSystem.cs" id="1_swing"]
 [ext_resource type="PackedScene" uid="uid://b5k8q8q8q8q8" path="res://Scenes/Entities/GolfBall.tscn" id="2_ball"]
@@ -8,7 +8,7 @@
 [ext_resource type="Script" uid="uid://c78rj73wym8kb" path="res://Scripts/Systems/PlayerController.cs" id="9_player"]
 [ext_resource type="Script" uid="uid://dray5mi350m3q" path="res://Scripts/Systems/AimAssist.cs" id="10_aim"]
 [ext_resource type="Script" uid="uid://cqv2uyvt2dx6d" path="res://Scripts/Systems/HeightmapTerrain.cs" id="11_terrain"]
-[ext_resource type="Script" path="res://Scripts/Levels/FoxHollowGenerator.cs" id="12_generator"]
+[ext_resource type="Script" uid="uid://borpit5qwrplr" path="res://Scripts/Levels/FoxHollowGenerator.cs" id="12_generator"]
 
 [sub_resource type="ProceduralSkyMaterial" id="ProceduralSkyMaterial_1"]
 sky_top_color = Color(0.384314, 0.454902, 0.54902, 1)
@@ -66,9 +66,7 @@ shadow_enabled = true
 collision_layer = 2
 collision_mask = 0
 script = ExtResource("11_terrain")
-GridWidth = 200
 GridDepth = 400
-CellSize = 1.0
 
 [node name="CollisionShape3D" type="CollisionShape3D" parent="HeightmapTerrain"]
 
@@ -79,7 +77,6 @@ PlayerPath = NodePath("../PlayerPlaceholder")
 
 [node name="PlayerPlaceholder" type="CharacterBody3D" parent="."]
 transform = Transform3D(-1, 0, -8.74228e-08, 0, 1, 0, 8.74228e-08, 0, -1, 100, 0.5, 20)
-collision_layer = 1
 collision_mask = 2
 script = ExtResource("9_player")
 CameraPath = NodePath("Camera3D")

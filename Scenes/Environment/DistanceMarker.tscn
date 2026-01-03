@@ -1,4 +1,4 @@
-[gd_scene load_steps=5 format=3 uid="uid://dmsk8j8j8j8j"]
+[gd_scene load_steps=6 format=3 uid="uid://dmsk8j8j8j8j"]
 
 [ext_resource type="Script" path="res://Scripts/Environment/DistanceMarker.cs" id="1_marker"]
 
@@ -18,6 +18,9 @@ albedo_color = Color(0.95, 0.95, 0.95, 1.0)
 material = SubResource("Mat_Board")
 size = Vector3(1.5, 0.8, 0.1)
 
+[sub_resource type="BoxShape3D" id="BoxShape3D_Sign"]
+size = Vector3(1.5, 2.0, 0.2)
+
 [node name="DistanceMarker" type="Node3D"]
 script = ExtResource("1_marker")
 
@@ -36,3 +39,9 @@ text = "100y"
 font_size = 64
 outline_size = 8
 modulate = Color(0, 0, 0, 1)
+
+[node name="StaticBody3D" type="StaticBody3D" parent="."]
+
+[node name="CollisionShape3D" type="CollisionShape3D" parent="StaticBody3D"]
+transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 0, 1, 0)
+shape = SubResource("BoxShape3D_Sign")

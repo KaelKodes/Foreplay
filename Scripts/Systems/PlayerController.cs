@@ -3,10 +3,12 @@ using System;
 
 public enum PlayerState
 {
-    Idle,       // Walking / Roaming
-    Golfing,    // Aiming / Swinging
-    Driving,    // In a vehicle
-    Surveying   // Placing points for terrain
+    WalkMode,       // Formerly Idle
+    GolfMode,       // Aiming / Swinging
+    BuildMode,      // Formerly Surveying
+    DriveMode,      // In a vehicle
+    SpectateMode,   // Free-cam / Spectating
+    PlacingObject   // Manipulating an object (Move/Place)
 }
 
 public partial class PlayerController : CharacterBody3D
@@ -25,14 +27,15 @@ public partial class PlayerController : CharacterBody3D
     // Multiplayer Properties
     [Export] public int PlayerIndex { get; set; } = 0; // 0=Blue, 1=Red, 2=Green, 3=Yellow
     public bool IsLocal { get; set; } = true;
-    private PlayerState _currentState = PlayerState.Idle;
+    private PlayerState _currentState = PlayerState.WalkMode;
     public PlayerState CurrentState
     {
         get => _currentState;
         set
         {
+            GD.Print($"[PlayerController] State changing from {_currentState} to {value}");
             _currentState = value;
-            if (_facingArrow != null) _facingArrow.Visible = (_currentState == PlayerState.Idle);
+            if (_facingArrow != null) _facingArrow.Visible = (_currentState == PlayerState.WalkMode);
         }
     }
 
@@ -41,6 +44,9 @@ public partial class PlayerController : CharacterBody3D
     private SwingSystem _swingSystem;
     private MeshInstance3D _facingArrow;
     private GolfCart _currentCart;
+    private InteractableObject _selectedObject;
+    public InteractableObject SelectedObject => _selectedObject;
+    private MainHUDController _hud;
 
     public override void _Ready()
     {
@@ -64,6 +70,8 @@ public partial class PlayerController : CharacterBody3D
         _facingArrow.MaterialOverride = mat;
 
         AddChild(_facingArrow);
+
+        _hud = GetTree().CurrentScene.FindChild("HUD", true, false) as MainHUDController;
 
         // Force initial orientation facing down-range (+Z)
         RotationDegrees = new Vector3(0, 180, 0);
@@ -99,21 +107,23 @@ public partial class PlayerController : CharacterBody3D
         if (!IsLocal) return;
 
         // 2. State Check
-        if (CurrentState == PlayerState.Golfing)
+        switch (CurrentState)
         {
-            HandleGolfingInput(delta);
-        }
-        else if (CurrentState == PlayerState.Idle)
-        {
-            HandleWalkingInput(delta);
-        }
-        else if (CurrentState == PlayerState.Driving)
-        {
-            HandleDrivingInput(delta);
-        }
-        else if (CurrentState == PlayerState.Surveying)
-        {
-            HandleSurveyingInput(delta);
+            case PlayerState.GolfMode:
+                HandleGolfingInput(delta);
+                break;
+            case PlayerState.WalkMode:
+                HandleWalkingInput(delta);
+                break;
+            case PlayerState.DriveMode:
+                HandleDrivingInput(delta);
+                break;
+            case PlayerState.BuildMode:
+                HandleBuildModeInput(delta);
+                break;
+            case PlayerState.SpectateMode:
+                // TODO: Free-look cam
+                break;
         }
     }
 
@@ -125,7 +135,6 @@ public partial class PlayerController : CharacterBody3D
         if (_swingSystem.CurrentStage == SwingStage.Executing || _swingSystem.CurrentStage == SwingStage.ShotComplete) return;
 
         // Continuously sync player position/rotation to camera's horizontal heading.
-        // This ensures the golfer stays in the correct stance relative to the aim line.
         Vector3 ballPos = _swingSystem.BallPosition;
         Vector3 camForward = -_camera.GlobalTransform.Basis.Z;
         camForward.Y = 0;
@@ -207,65 +216,72 @@ public partial class PlayerController : CharacterBody3D
         _isGrounded = IsOnFloor();
 
         // Interaction Logic
-        if (_swingSystem != null)
+        HandleProximityPrompts();
+
+        // Search for nearby Golf Carts
+        HandleVehicleDetection();
+    }
+
+    private void HandleProximityPrompts()
+    {
+        if (_swingSystem == null) return;
+
+        float distToTee = GlobalPosition.DistanceTo(_swingSystem.TeePosition);
+        float distToBall = GlobalPosition.DistanceTo(_swingSystem.BallPosition);
+        bool isBallInField = _swingSystem.BallPosition.DistanceTo(_swingSystem.TeePosition) > 1.0f;
+
+        // Check Ghost Markers
+        bool nearGhostMarker = false;
+        foreach (var ghost in _swingSystem.GhostMarkers)
         {
-            float distToTee = GlobalPosition.DistanceTo(_swingSystem.TeePosition);
-            float distToBall = GlobalPosition.DistanceTo(_swingSystem.BallPosition);
-            bool isBallInField = _swingSystem.BallPosition.DistanceTo(_swingSystem.TeePosition) > 1.0f;
-
-            // Check Ghost Markers
-            bool nearGhostMarker = false;
-            foreach (var ghost in _swingSystem.GhostMarkers)
+            if (IsInstanceValid(ghost) && GlobalPosition.DistanceTo(ghost.GlobalPosition) < 2.0f)
             {
-                if (IsInstanceValid(ghost) && GlobalPosition.DistanceTo(ghost.GlobalPosition) < 2.0f)
+                nearGhostMarker = true;
+                break;
+            }
+        }
+
+        if (distToTee < 2.0f || nearGhostMarker)
+        {
+            if (isBallInField)
+            {
+                _swingSystem.SetPrompt(true, "E: GOTO BALL | T: RESET");
+                if (Input.IsKeyPressed(Key.E))
                 {
-                    nearGhostMarker = true;
-                    break;
+                    Vector3 targetPos = _swingSystem.BallPosition + new Vector3(0, 0, 1.0f);
+                    TeleportTo(targetPos, _swingSystem.BallPosition);
+                    _swingSystem.EnterGolfMode();
+                }
+                else if (Input.IsKeyPressed(Key.T))
+                {
+                    _swingSystem.ResetMatch();
                 }
             }
-
-            if (distToTee < 2.0f || nearGhostMarker)
+            else
             {
-                if (isBallInField)
-                {
-                    _swingSystem.SetPrompt(true, "E: GOTO BALL | T: RESET");
-                    if (Input.IsKeyPressed(Key.E))
-                    {
-                        // Teleport to Ball vicinity
-                        Vector3 targetPos = _swingSystem.BallPosition + new Vector3(0, 0, 1.0f);
-                        TeleportTo(targetPos, _swingSystem.BallPosition);
-                        // Automatically enter Golf Mode
-                        _swingSystem.EnterGolfMode();
-                    }
-                    else if (Input.IsKeyPressed(Key.T))
-                    {
-                        _swingSystem.ResetMatch();
-                    }
-                }
-                else
-                {
-                    _swingSystem.SetPrompt(true, "PRESS E TO TEE OFF");
-                    if (Input.IsKeyPressed(Key.E))
-                    {
-                        _swingSystem.EnterGolfMode();
-                    }
-                }
-            }
-            else if (distToBall < 2.0f && isBallInField)
-            {
-                _swingSystem.SetPrompt(true, "PRESS E TO GOLF");
+                _swingSystem.SetPrompt(true, "PRESS E TO TEE OFF");
                 if (Input.IsKeyPressed(Key.E))
                 {
                     _swingSystem.EnterGolfMode();
                 }
             }
-            else
+        }
+        else if (distToBall < 2.0f && isBallInField)
+        {
+            _swingSystem.SetPrompt(true, "PRESS E TO GOLF");
+            if (Input.IsKeyPressed(Key.E))
             {
-                _swingSystem.SetPrompt(false);
+                _swingSystem.EnterGolfMode();
             }
         }
+        else
+        {
+            _swingSystem.SetPrompt(false);
+        }
+    }
 
-        // Search for nearby Golf Carts
+    private void HandleVehicleDetection()
+    {
         var carts = GetTree().GetNodesInGroup("carts");
         GolfCart nearestCart = null;
         float minDist = 3.0f;
@@ -286,7 +302,7 @@ public partial class PlayerController : CharacterBody3D
         if (nearestCart != null && !nearestCart.IsBeingDriven)
         {
             if (_swingSystem != null) _swingSystem.SetPrompt(true, "PRESS E TO DRIVE");
-            if (Input.IsActionJustPressed("ui_accept") || Input.IsKeyPressed(Key.E))
+            if (Input.IsKeyPressed(Key.E))
             {
                 EnterVehicle(nearestCart);
             }
@@ -297,34 +313,82 @@ public partial class PlayerController : CharacterBody3D
     {
         if (_currentCart == null)
         {
-            CurrentState = PlayerState.Idle;
+            CurrentState = PlayerState.WalkMode;
             return;
         }
 
-        // Stick player to cart position (relative offset)
         GlobalPosition = _currentCart.GlobalPosition + _currentCart.Transform.Basis.Y * 0.5f;
         Rotation = _currentCart.Rotation;
 
-        if (Input.IsActionJustPressed("ui_cancel") || Input.IsKeyPressed(Key.E))
+        if (Input.IsKeyPressed(Key.E))
         {
             ExitVehicle();
         }
     }
 
-    private void HandleSurveyingInput(double delta)
+    private void HandleBuildModeInput(double delta)
     {
-        // Surveying uses standard walking controls for movement
+        // Standard movement allowed in build mode
         HandleWalkingInput(delta);
 
-        // Interaction logic for Surveying is handled by the SurveyManager
+        // Tool-specific behavior
+        if (_hud != null && _hud.CurrentTool != MainHUDController.BuildTool.Selection)
+        {
+            // If not in selection tool, don't allow selecting/editing objects
+            if (_selectedObject != null) _selectedObject.SetSelected(false);
+            _selectedObject = null;
+            return;
+        }
+
+        // Selection feedback (Highlight on hover)
+        InteractableObject hoverObj = CheckInteractableRaycast();
+        if (hoverObj != null && hoverObj != _selectedObject)
+        {
+            hoverObj.OnHover(true);
+        }
+
+        // Handle Selected Object Actions
+        if (_selectedObject != null)
+        {
+            if (Input.IsKeyPressed(Key.X) && _selectedObject.IsDeletable)
+            {
+                _selectedObject.QueueFree();
+                _selectedObject = null;
+                _swingSystem.SetPrompt(false);
+            }
+            else if (Input.IsKeyPressed(Key.C) && _selectedObject.IsMovable)
+            {
+                if (_swingSystem.ObjectPlacer != null)
+                {
+                    var objToMove = _selectedObject;
+                    _selectedObject.SetSelected(false);
+                    _selectedObject = null;
+                    _swingSystem.ObjectPlacer.StartPlacing(objToMove);
+                }
+            }
+
+            if (_selectedObject != null)
+            {
+                _swingSystem.SetPrompt(true, $"SELECTED: {_selectedObject.ObjectName} | X: DELETE | C: REPOSITION");
+            }
+        }
+        else if (hoverObj != null)
+        {
+            _swingSystem.SetPrompt(true, $"CLICK TO SELECT {hoverObj.ObjectName}");
+        }
+        else
+        {
+            // Only clear if we aren't displaying something else from BuildManager
+            // (Note: BuildManager might be setting prompts too, so we need to be careful)
+        }
     }
 
     private void EnterVehicle(GolfCart cart)
     {
         _currentCart = cart;
         _currentCart.Enter(this);
-        CurrentState = PlayerState.Driving;
-        Visible = false; // Hide player while driving (or could sit them)
+        CurrentState = PlayerState.DriveMode;
+        Visible = false;
 
         if (_camera != null)
         {
@@ -338,10 +402,9 @@ public partial class PlayerController : CharacterBody3D
         if (_currentCart == null) return;
 
         _currentCart.Exit();
-        CurrentState = PlayerState.Idle;
+        CurrentState = PlayerState.WalkMode;
         Visible = true;
 
-        // Place player next to cart
         GlobalPosition = _currentCart.GlobalPosition + _currentCart.Transform.Basis.X * 2.0f;
 
         if (_camera != null)
@@ -354,12 +417,66 @@ public partial class PlayerController : CharacterBody3D
     public void TeleportTo(Vector3 position, Vector3 lookAtTarget)
     {
         GlobalPosition = position;
-
-        // Face the target
-        // LookAt points -Z towards target, which matches our Forward convention
         LookAt(new Vector3(lookAtTarget.X, GlobalPosition.Y, lookAtTarget.Z), Vector3.Up);
-
-        // Ensure rotation is clean (Y-axis only)
         RotationDegrees = new Vector3(0, RotationDegrees.Y, 0);
+    }
+
+    private InteractableObject CheckInteractableRaycast()
+    {
+        if (_camera == null) return null;
+
+        var mousePos = GetViewport().GetMousePosition();
+        var from = _camera.ProjectRayOrigin(mousePos);
+        var to = from + _camera.ProjectRayNormal(mousePos) * 100.0f;
+
+        var spaceState = GetWorld3D().DirectSpaceState;
+        var query = PhysicsRayQueryParameters3D.Create(from, to);
+
+        var result = spaceState.IntersectRay(query);
+        if (result.Count > 0)
+        {
+            var collider = (Node)result["collider"];
+            var interactable = collider.GetNodeOrNull<InteractableObject>(".") ?? collider.GetParentOrNull<InteractableObject>();
+            if (interactable == null && collider.GetParent() != null)
+            {
+                interactable = collider.GetParent().GetParentOrNull<InteractableObject>();
+            }
+            return interactable;
+        }
+        return null;
+    }
+
+    public override void _Input(InputEvent @event)
+    {
+        if (!IsLocal) return;
+
+        if (@event is InputEventKey k && k.Pressed && !k.Echo && k.Keycode == Key.V)
+        {
+            if (CurrentState == PlayerState.WalkMode)
+            {
+                _swingSystem.EnterBuildMode();
+            }
+            else if (CurrentState == PlayerState.BuildMode)
+            {
+                if (_selectedObject != null) _selectedObject.SetSelected(false);
+                _selectedObject = null;
+                _swingSystem.ExitBuildMode();
+            }
+        }
+
+        // Selection logic in Build Mode
+        if (CurrentState == PlayerState.BuildMode && @event is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
+        {
+            if (_hud == null || _hud.CurrentTool == MainHUDController.BuildTool.Selection)
+            {
+                InteractableObject clickedObj = CheckInteractableRaycast();
+                if (clickedObj != _selectedObject)
+                {
+                    if (_selectedObject != null) _selectedObject.SetSelected(false);
+                    _selectedObject = clickedObj;
+                    if (_selectedObject != null) _selectedObject.SetSelected(true);
+                }
+            }
+        }
     }
 }

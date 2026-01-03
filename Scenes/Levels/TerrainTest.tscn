@@ -3,7 +3,7 @@
 [ext_resource type="Script" uid="uid://dm68lcvq6qel5" path="res://Scripts/Systems/SwingSystem.cs" id="1_swing"]
 [ext_resource type="PackedScene" uid="uid://b5k8q8q8q8q8" path="res://Scenes/Entities/GolfBall.tscn" id="2_ball"]
 [ext_resource type="PackedScene" uid="uid://c6u7q8q8q8q8" path="res://Scenes/UI/HUD.tscn" id="3_hud_scene"]
-[ext_resource type="Script" uid="uid://62yjsbswf6m6" path="res://Scripts/UI/SwingBarController.cs" id="4_hud_script"]
+
 [ext_resource type="Script" uid="uid://nxdsvm1xh80" path="res://Scripts/Systems/CameraController.cs" id="5_camera"]
 [ext_resource type="PackedScene" uid="uid://dmsk8j8j8j8j" path="res://Scenes/Environment/DistanceMarker.tscn" id="6_marker"]
 [ext_resource type="Script" uid="uid://c6nnxkn1no5sy" path="res://Scripts/Systems/WindSystem.cs" id="7_wind"]
@@ -213,7 +213,5 @@ WindSystemPath = NodePath("../WindSystem")
 transform = Transform3D(1, 0, 0, 0, 1, 0, 0, 0, 1, 49.51819, 1, -59.909077)
 
 [node name="HUD" parent="." instance=ExtResource("3_hud_scene")]
-script = ExtResource("4_hud_script")
 SwingSystemPath = NodePath("../SwingSystem")
-WindSystemPath = NodePath("../WindSystem")
-CameraControllerPath = NodePath("../PlayerPlaceholder/Camera3D")
+PlayerPath = NodePath("../PlayerPlaceholder")

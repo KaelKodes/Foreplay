@@ -24,9 +24,11 @@ public partial class SwingSystem : Node
 	private BallLieSystem _lieSystem;
 	private StatsService _statsService;
 	private MarkerManager _markerManager;
-	private SurveyManager _surveyManager;
+	private BuildManager _buildManager;
+	private ObjectPlacer _objectPlacer;
 
-	public SurveyManager SurveyManager => _surveyManager;
+	public BuildManager BuildManager => _buildManager;
+	public ObjectPlacer ObjectPlacer => _objectPlacer;
 
 	private SwingStage _stage = SwingStage.Idle;
 	private float _timer = 0.0f;
@@ -55,7 +57,12 @@ public partial class SwingSystem : Node
 	public override void _Ready()
 	{
 		var teeBox = GetNodeOrNull<Node3D>("../TeeBox/VisualTee");
-		if (teeBox != null) TeePosition = teeBox.GlobalPosition;
+		if (teeBox == null) teeBox = GetNodeOrNull<Node3D>("../TeeBox");
+		if (teeBox != null)
+		{
+			TeePosition = teeBox.GlobalPosition;
+			teeBox.AddToGroup("targets");
+		}
 
 		var placeholder = GetNodeOrNull<PlayerController>("../PlayerPlaceholder");
 		if (placeholder != null) RegisterPlayer(placeholder);
@@ -80,13 +87,25 @@ public partial class SwingSystem : Node
 		_markerManager = new MarkerManager();
 		AddChild(_markerManager);
 
-		_surveyManager = new SurveyManager();
-		_surveyManager.Name = "SurveyManager";
-		_surveyManager.Player = _currentPlayer;
-		AddChild(_surveyManager);
+		_buildManager = new BuildManager();
+		_buildManager.Name = "BuildManager";
+		_buildManager.Player = _currentPlayer;
+		AddChild(_buildManager);
+
+		_objectPlacer = new ObjectPlacer();
+		_objectPlacer.Name = "ObjectPlacer";
+		AddChild(_objectPlacer);
 
 		var green = GetNodeOrNull<Node3D>("../Green500");
-		if (green != null) _targetPosition = green.GlobalPosition;
+		if (green == null) green = GetTree().CurrentScene.FindChild("Green*", true, false) as Node3D;
+		if (green != null)
+		{
+			_targetPosition = green.GlobalPosition;
+			green.AddToGroup("targets");
+			// Also search for Flag or Pin children
+			var pin = green.FindChild("Pin", true, false) as Node3D;
+			if (pin != null) pin.AddToGroup("targets");
+		}
 
 		CallDeferred(MethodName.ExitGolfMode);
 	}
@@ -94,6 +113,7 @@ public partial class SwingSystem : Node
 	public void RegisterPlayer(PlayerController player)
 	{
 		_currentPlayer = player;
+		if (_buildManager != null) _buildManager.Player = player;
 		GD.Print($"SwingSystem: Registered Player {player.Name}");
 	}
 
@@ -103,7 +123,7 @@ public partial class SwingSystem : Node
 	{
 		if (_currentPlayer == null) return;
 		_markerManager.UpdateBallIndicator(false, Vector3.Zero, 0);
-		_currentPlayer.CurrentState = PlayerState.Golfing;
+		_currentPlayer.CurrentState = PlayerState.GolfMode;
 		SetPlayerStance();
 
 		if (_camera != null)
@@ -123,7 +143,7 @@ public partial class SwingSystem : Node
 	public void ExitGolfMode()
 	{
 		if (_currentPlayer == null) return;
-		_currentPlayer.CurrentState = PlayerState.Idle;
+		_currentPlayer.CurrentState = PlayerState.WalkMode;
 
 		if (_camera != null)
 		{
@@ -135,18 +155,20 @@ public partial class SwingSystem : Node
 		EmitSignal(SignalName.ModeChanged, false);
 	}
 
-	public void EnterSurveyMode()
+
+	public void EnterBuildMode()
 	{
 		if (_currentPlayer == null) return;
-		ExitGolfMode(); // Ensure we are out of golf mode
-		_currentPlayer.CurrentState = PlayerState.Surveying;
-		SetPrompt(true, "SURVEY MODE: SPACE TO DROP POINT | T TO CLEAR");
+		ExitGolfMode();
+		_currentPlayer.CurrentState = PlayerState.BuildMode;
+		SetPrompt(false);
 	}
 
-	public void ExitSurveyMode()
+
+	public void ExitBuildMode()
 	{
 		if (_currentPlayer == null) return;
-		_currentPlayer.CurrentState = PlayerState.Idle;
+		_currentPlayer.CurrentState = PlayerState.WalkMode;
 		SetPrompt(false);
 	}
 
@@ -242,11 +264,6 @@ public partial class SwingSystem : Node
 		};
 
 		var result = ShotPhysics.CalculateShot(shotParams);
-
-		GD.Print($"[SHOT DEBUG] Power input: {_lockedPower}, Accuracy: {_lockedAccuracy}");
-		GD.Print($"[SHOT DEBUG] Player Stat Power: {_statsService.PlayerStats.Power}");
-		GD.Print($"[SHOT DEBUG] Calculated Launch Velocity: {result.Velocity.Length()} m/s");
-		GD.Print($"[SHOT DEBUG] Estimated Carry: {(result.Velocity.Length() * result.Velocity.Length()) / 9.8f} meters (approx)");
 
 		if (_windSystem != null) _ball.SetWind(_windSystem.GetWindVelocityVector());
 

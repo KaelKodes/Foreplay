@@ -1,347 +1,78 @@
-[gd_scene load_steps=2 format=3 uid="uid://c6u7q8q8q8q8"]
+[gd_scene load_steps=5 format=3 uid="uid://c6u7q8q8q8q8"]
 
-[ext_resource type="Texture2D" uid="uid://c0hbtxjib02gc" path="res://Assets/Textures/UI/WindArrow.png" id="2_wind_arrow"]
+[ext_resource type="Script" uid="uid://24jell6xrp4i" path="res://Scripts/UI/MainHUDController.cs" id="1_main"]
+[ext_resource type="Script" uid="uid://ciny5a570kgnd" path="res://Scripts/UI/GolfHUDController.cs" id="2_golf"]
+[ext_resource type="Script" uid="uid://dtqfmu3mbo0kx" path="res://Scripts/UI/BuildHUDController.cs" id="3_build"]
+[ext_resource type="Texture2D" uid="uid://c0hbtxjib02gc" path="res://Assets/Textures/UI/WindArrow.png" id="4_wind_arrow"]
 
 [node name="HUD" type="CanvasLayer"]
+script = ExtResource("1_main")
 
-[node name="SwingContainer" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -250.0
-offset_top = -120.0
-offset_right = 250.0
-offset_bottom = -40.0
-grow_horizontal = 2
-grow_vertical = 0
-
-[node name="PowerBar" type="ProgressBar" parent="SwingContainer"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-theme_override_constants/outline_size = 0
-show_percentage = false
-
-[node name="AccuracyLine" type="ColorRect" parent="SwingContainer"]
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_left = 125.0
-offset_top = -40.0
-offset_right = 128.0
-offset_bottom = 40.0
-grow_vertical = 2
-
-[node name="BtnNextShot" type="Button" parent="SwingContainer"]
-visible = false
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -75.0
-offset_top = -120.0
-offset_right = 75.0
-offset_bottom = -80.0
-grow_horizontal = 2
-grow_vertical = 0
-focus_mode = 0
-theme_override_colors/font_color = Color(0, 1, 0, 1)
-theme_override_font_sizes/font_size = 20
-text = "PLAY NEXT SHOT"
-
-[node name="PowerLine" type="ColorRect" parent="SwingContainer"]
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_left = 450.0
-offset_top = -40.0
-offset_right = 453.0
-offset_bottom = 40.0
-grow_vertical = 2
-
-[node name="AccuracyMarker" type="ColorRect" parent="SwingContainer"]
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_top = -30.0
-offset_right = 6.0
-offset_bottom = 30.0
-grow_vertical = 2
-color = Color(1, 0, 0, 1)
-
-[node name="LockedPowerLine" type="ColorRect" parent="SwingContainer"]
-visible = false
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_top = -40.0
-offset_right = 3.0
-offset_bottom = 40.0
-grow_vertical = 2
-color = Color(1, 1, 0, 1)
-
-[node name="LockedAccuracyLine" type="ColorRect" parent="SwingContainer"]
-visible = false
-layout_mode = 1
-anchors_preset = 4
-anchor_top = 0.5
-anchor_bottom = 0.5
-offset_top = -40.0
-offset_right = 3.0
-offset_bottom = 40.0
-grow_vertical = 2
-color = Color(1, 1, 0, 1)
-
-[node name="WindContainer" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 1
-anchor_left = 1.0
-anchor_right = 1.0
-offset_left = -180.0
-offset_top = 20.0
-offset_right = -30.0
-offset_bottom = 250.0
-grow_horizontal = 0
-
-[node name="WindArrow" type="TextureRect" parent="WindContainer"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -32.0
-offset_right = 32.0
-offset_bottom = 64.0
-grow_horizontal = 2
-pivot_offset = Vector2(32, 32)
-texture = ExtResource("2_wind_arrow")
-expand_mode = 1
-
-[node name="WindLabel" type="Label" parent="WindContainer"]
-layout_mode = 1
-anchors_preset = 5
-anchor_left = 0.5
-anchor_right = 0.5
-offset_left = -40.0
-offset_top = 65.0
-offset_right = 40.0
-offset_bottom = 90.0
-grow_horizontal = 2
-text = "10 mph"
-horizontal_alignment = 1
-
-[node name="WindDirGrid" type="GridContainer" parent="WindContainer"]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -60.0
-offset_top = -139.0
-offset_right = 60.0
-offset_bottom = -9.0
-grow_horizontal = 2
-grow_vertical = 0
-columns = 3
-
-[node name="BtnNW" type="Button" parent="WindContainer/WindDirGrid"]
-custom_minimum_size = Vector2(35, 30)
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 10
-text = "NW"
-
-[node name="BtnN" type="Button" parent="WindContainer/WindDirGrid"]
-custom_minimum_size = Vector2(35, 30)
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 10
-text = "N"
-
-[node name="BtnNE" type="Button" parent="WindContainer/WindDirGrid"]
-custom_minimum_size = Vector2(35, 30)
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 10
-text = "NE"
-
-[node name="BtnW" type="Button" parent="WindContainer/WindDirGrid"]
-custom_minimum_size = Vector2(35, 30)
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 10
-text = "W"
-
-[node name="Control" type="Control" parent="WindContainer/WindDirGrid"]
-layout_mode = 2
-
-[node name="BtnE" type="Button" parent="WindContainer/WindDirGrid"]
-custom_minimum_size = Vector2(35, 30)
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 10
-text = "E"
-
-[node name="BtnSW" type="Button" parent="WindContainer/WindDirGrid"]
-custom_minimum_size = Vector2(35, 30)
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 10
-text = "SW"
-
-[node name="BtnS" type="Button" parent="WindContainer/WindDirGrid"]
-custom_minimum_size = Vector2(35, 30)
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 10
-text = "S"
-
-[node name="BtnSE" type="Button" parent="WindContainer/WindDirGrid"]
-custom_minimum_size = Vector2(35, 30)
-layout_mode = 2
-focus_mode = 0
-theme_override_font_sizes/font_size = 10
-text = "SE"
-
-[node name="WindSpeedSpin" type="SpinBox" parent="WindContainer"]
-layout_mode = 1
-anchors_preset = 7
-anchor_left = 0.5
-anchor_top = 1.0
-anchor_right = 0.5
-anchor_bottom = 1.0
-offset_left = -43.281246
-offset_top = -30.0
-offset_right = 43.28125
-offset_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 0
-max_value = 30.0
-value = 20.0
-alignment = 1
-suffix = "mph"
-
-[node name="SpinSelection" type="Control" parent="."]
-layout_mode = 3
-anchors_preset = 3
-anchor_left = 1.0
-anchor_top = 1.0
-anchor_right = 1.0
-anchor_bottom = 1.0
-offset_left = -150.0
-offset_top = -150.0
-offset_right = -50.0
-offset_bottom = -50.0
-grow_horizontal = 0
-grow_vertical = 0
-
-[node name="BallBase" type="ColorRect" parent="SpinSelection"]
-layout_mode = 1
-anchors_preset = 15
-anchor_right = 1.0
-anchor_bottom = 1.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(0.8, 0.8, 0.8, 1)
-
-[node name="SpinMarker" type="ColorRect" parent="SpinSelection"]
-layout_mode = 1
-anchors_preset = 8
-anchor_left = 0.5
-anchor_top = 0.5
-anchor_right = 0.5
-anchor_bottom = 0.5
-offset_left = -5.0
-offset_top = -5.0
-offset_right = 5.0
-offset_bottom = 5.0
-grow_horizontal = 2
-grow_vertical = 2
-color = Color(1, 0, 0, 1)
-
-[node name="StatsPanel" type="VBoxContainer" parent="."]
+[node name="ModeLabel" type="Label" parent="."]
 offset_left = 20.0
 offset_top = 20.0
 offset_right = 200.0
-offset_bottom = 300.0
-
-[node name="StrokeLabel" type="Label" parent="StatsPanel"]
-layout_mode = 2
-theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
-theme_override_font_sizes/font_size = 28
-text = "Stroke: 1"
-horizontal_alignment = 1
-
-[node name="BackBtn" type="Button" parent="StatsPanel"]
-layout_mode = 2
-focus_mode = 0
-text = "Back to Menu"
-
-[node name="ResetBtn" type="Button" parent="StatsPanel"]
-layout_mode = 2
-focus_mode = 0
-text = "Reset Ball"
-
-[node name="ExitGolfBtn" type="Button" parent="StatsPanel"]
-layout_mode = 2
-focus_mode = 0
-text = "Exit Golf Mode"
-
-[node name="ToggleWindBtn" type="Button" parent="StatsPanel"]
-layout_mode = 2
-focus_mode = 0
-text = "Wind: ON"
-
-[node name="PowerLabel" type="Label" parent="StatsPanel"]
-layout_mode = 2
-text = "Power: 10"
-
-[node name="ControlLabel" type="Label" parent="StatsPanel"]
-layout_mode = 2
-text = "Control: 10"
-
-[node name="PowerOverrideLabel" type="Label" parent="StatsPanel"]
-layout_mode = 2
-theme_override_font_sizes/font_size = 10
-text = "Power Override (Debug):"
-
-[node name="PowerOverrideSpin" type="SpinBox" parent="StatsPanel"]
-layout_mode = 2
-min_value = 4.0
-max_value = 9.0
-step = 0.1
-value = 5.0
-alignment = 1
-
-[node name="SpeedLabel" type="Label" parent="StatsPanel"]
-layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.4, 0.4, 1)
+offset_bottom = 50.0
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 20
-text = "Speed: 0.0 m/s"
+text = "WALK MODE"
+vertical_alignment = 1
 
-[node name="DistanceLabel" type="Label" parent="StatsPanel"]
+[node name="BottomLeftHints" type="VBoxContainer" parent="."]
+anchors_preset = 2
+anchor_top = 1.0
+anchor_bottom = 1.0
+offset_left = 20.0
+offset_top = -140.0
+offset_right = 300.0
+offset_bottom = -20.0
+grow_vertical = 0
+alignment = 2
+
+[node name="ModeHint" type="Label" parent="BottomLeftHints"]
 layout_mode = 2
-theme_override_colors/font_color = Color(1, 0.9, 0.4, 1)
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 4
 theme_override_font_sizes/font_size = 20
-text = "Carry: 0.0y"
+text = "V: BUILD MODE"
+vertical_alignment = 1
 
-[node name="TotalLabel" type="Label" parent="StatsPanel"]
+[node name="BuildHint1" type="Label" parent="BottomLeftHints"]
+visible = false
 layout_mode = 2
-theme_override_colors/font_color = Color(0.6, 1, 0.6, 1)
-theme_override_font_sizes/font_size = 24
-text = "Total: 0.0y"
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "Spacebar: Drop Point"
+vertical_alignment = 1
+
+[node name="BuildHint2" type="Label" parent="BottomLeftHints"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "X: Delete"
+vertical_alignment = 1
+
+[node name="BuildHint3" type="Label" parent="BottomLeftHints"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "C: Reposition"
+vertical_alignment = 1
+
+[node name="BuildHint4" type="Label" parent="BottomLeftHints"]
+visible = false
+layout_mode = 2
+theme_override_colors/font_color = Color(1, 1, 1, 1)
+theme_override_constants/outline_size = 4
+theme_override_font_sizes/font_size = 20
+text = "Shift+Wheel: Height"
+vertical_alignment = 1
 
 [node name="PromptContainer" type="CenterContainer" parent="."]
 anchors_preset = 15
@@ -360,15 +91,379 @@ theme_override_font_sizes/font_size = 32
 text = "Press E to Tee Up"
 horizontal_alignment = 1
 
-[node name="SurveyPanel" type="VBoxContainer" parent="."]
+[node name="ToolsPanel" type="PanelContainer" parent="."]
+visible = false
+offset_left = 20.0
+offset_top = 200.0
+offset_right = 180.0
+offset_bottom = 400.0
+
+[node name="VBox" type="VBoxContainer" parent="ToolsPanel"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Label" type="Label" parent="ToolsPanel/VBox"]
+layout_mode = 2
+text = "TOOLS"
+horizontal_alignment = 1
+
+[node name="SelectionBtn" type="Button" parent="ToolsPanel/VBox"]
+layout_mode = 2
+text = "Selection"
+
+[node name="SurveyBtn" type="Button" parent="ToolsPanel/VBox"]
+layout_mode = 2
+text = "Survey"
+
+[node name="NewObjectBtn" type="Button" parent="ToolsPanel/VBox"]
+layout_mode = 2
+text = "New Object"
+
+[node name="ObjectGallery" type="PanelContainer" parent="."]
+visible = false
+offset_left = 190.0
+offset_top = 200.0
+offset_right = 440.0
+offset_bottom = 500.0
+
+[node name="VBox" type="VBoxContainer" parent="ObjectGallery"]
+layout_mode = 2
+
+[node name="Label" type="Label" parent="ObjectGallery/VBox"]
+layout_mode = 2
+text = "OBJECTS"
+horizontal_alignment = 1
+
+[node name="Scroll" type="ScrollContainer" parent="ObjectGallery/VBox"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="Grid" type="GridContainer" parent="ObjectGallery/VBox/Scroll"]
+layout_mode = 2
+size_flags_horizontal = 3
+columns = 2
+
+[node name="SignBtn" type="Button" parent="ObjectGallery/VBox/Scroll/Grid"]
+layout_mode = 2
+text = "Distance Sign"
+
+[node name="WalkHUD" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+
+[node name="GolfHUD" type="Control" parent="."]
+layout_mode = 3
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+mouse_filter = 2
+script = ExtResource("2_golf")
+
+[node name="SwingContainer" type="Control" parent="GolfHUD"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -250.0
+offset_top = -120.0
+offset_right = 250.0
+offset_bottom = -40.0
+grow_horizontal = 2
+grow_vertical = 0
+
+[node name="PowerBar" type="ProgressBar" parent="GolfHUD/SwingContainer"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+show_percentage = false
+
+[node name="PerfectLine" type="ColorRect" parent="GolfHUD/SwingContainer"]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 124.0
+offset_right = 126.0
+grow_vertical = 2
+color = Color(1, 1, 1, 0.5)
+
+[node name="Mark94" type="ColorRect" parent="GolfHUD/SwingContainer"]
+layout_mode = 1
+anchors_preset = 9
+anchor_bottom = 1.0
+offset_left = 469.0
+offset_right = 471.0
+grow_vertical = 2
+color = Color(0, 0, 0, 0.4)
+
+[node name="AccuracyMarker" type="ColorRect" parent="GolfHUD/SwingContainer"]
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -30.0
+offset_right = 6.0
+offset_bottom = 30.0
+grow_vertical = 2
+color = Color(1, 0, 0, 1)
+
+[node name="LockedPowerLine" type="ColorRect" parent="GolfHUD/SwingContainer"]
+visible = false
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -40.0
+offset_right = 3.0
+offset_bottom = 40.0
+grow_vertical = 2
+color = Color(1, 1, 0, 1)
+
+[node name="LockedAccuracyLine" type="ColorRect" parent="GolfHUD/SwingContainer"]
+visible = false
+layout_mode = 1
+anchors_preset = 4
+anchor_top = 0.5
+anchor_bottom = 0.5
+offset_top = -40.0
+offset_right = 3.0
+offset_bottom = 40.0
+grow_vertical = 2
+color = Color(1, 1, 0, 1)
+
+[node name="BtnNextShot" type="Button" parent="GolfHUD/SwingContainer"]
+visible = false
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -75.0
+offset_top = -40.0
+offset_right = 75.0
+grow_horizontal = 2
+grow_vertical = 0
+text = "PLAY NEXT SHOT"
+
+[node name="WindContainer" type="Control" parent="GolfHUD"]
+layout_mode = 1
+anchors_preset = 1
+anchor_left = 1.0
+anchor_right = 1.0
+offset_left = -180.0
+offset_top = 20.0
+offset_right = -30.0
+offset_bottom = 250.0
+grow_horizontal = 0
+
+[node name="WindArrow" type="TextureRect" parent="GolfHUD/WindContainer"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -32.0
+offset_right = 32.0
+offset_bottom = 64.0
+grow_horizontal = 2
+pivot_offset = Vector2(32, 32)
+texture = ExtResource("4_wind_arrow")
+expand_mode = 1
+
+[node name="WindLabel" type="Label" parent="GolfHUD/WindContainer"]
+layout_mode = 1
+anchors_preset = 5
+anchor_left = 0.5
+anchor_right = 0.5
+offset_left = -40.0
+offset_top = 65.0
+offset_right = 40.0
+offset_bottom = 90.0
+grow_horizontal = 2
+text = "10 mph"
+horizontal_alignment = 1
+
+[node name="WindDirGrid" type="GridContainer" parent="GolfHUD/WindContainer"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -60.0
+offset_top = -139.0
+offset_right = 60.0
+offset_bottom = -9.0
+grow_horizontal = 2
+grow_vertical = 0
+columns = 3
+
+[node name="BtnNW" type="Button" parent="GolfHUD/WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+text = "NW"
+
+[node name="BtnN" type="Button" parent="GolfHUD/WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+text = "N"
+
+[node name="BtnNE" type="Button" parent="GolfHUD/WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+text = "NE"
+
+[node name="BtnW" type="Button" parent="GolfHUD/WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+text = "W"
+
+[node name="Control" type="Control" parent="GolfHUD/WindContainer/WindDirGrid"]
+layout_mode = 2
+
+[node name="BtnE" type="Button" parent="GolfHUD/WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+text = "E"
+
+[node name="BtnSW" type="Button" parent="GolfHUD/WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+text = "SW"
+
+[node name="BtnS" type="Button" parent="GolfHUD/WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+text = "S"
+
+[node name="BtnSE" type="Button" parent="GolfHUD/WindContainer/WindDirGrid"]
+custom_minimum_size = Vector2(35, 30)
+layout_mode = 2
+text = "SE"
+
+[node name="WindSpeedSpin" type="SpinBox" parent="GolfHUD/WindContainer"]
+layout_mode = 1
+anchors_preset = 7
+anchor_left = 0.5
+anchor_top = 1.0
+anchor_right = 0.5
+anchor_bottom = 1.0
+offset_left = -43.0
+offset_top = -30.0
+offset_right = 43.0
+grow_horizontal = 2
+grow_vertical = 0
+max_value = 30.0
+value = 20.0
+alignment = 1
+suffix = "mph"
+
+[node name="SpinSelection" type="Control" parent="GolfHUD"]
+layout_mode = 1
+anchors_preset = 3
+anchor_left = 1.0
+anchor_top = 1.0
+anchor_right = 1.0
+anchor_bottom = 1.0
+offset_left = -150.0
+offset_top = -150.0
+offset_right = -50.0
+offset_bottom = -50.0
+grow_horizontal = 0
+grow_vertical = 0
+
+[node name="BallBase" type="ColorRect" parent="GolfHUD/SpinSelection"]
+layout_mode = 1
+anchors_preset = 15
+anchor_right = 1.0
+anchor_bottom = 1.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(0.8, 0.8, 0.8, 1)
+
+[node name="SpinMarker" type="ColorRect" parent="GolfHUD/SpinSelection"]
+layout_mode = 1
+anchors_preset = 8
+anchor_left = 0.5
+anchor_top = 0.5
+anchor_right = 0.5
+anchor_bottom = 0.5
+offset_left = -5.0
+offset_top = -5.0
+offset_right = 5.0
+offset_bottom = 5.0
+grow_horizontal = 2
+grow_vertical = 2
+color = Color(1, 0, 0, 1)
+
+[node name="StatsPanel" type="VBoxContainer" parent="GolfHUD"]
+layout_mode = 0
+offset_left = 20.0
+offset_top = 80.0
+offset_right = 200.0
+offset_bottom = 450.0
+
+[node name="StrokeLabel" type="Label" parent="GolfHUD/StatsPanel"]
+layout_mode = 2
+theme_override_colors/font_color = Color(0.4, 0.8, 1, 1)
+text = "Stroke: 1"
+
+[node name="BackBtn" type="Button" parent="GolfHUD/StatsPanel"]
+layout_mode = 2
+text = "Back to Menu"
+
+[node name="ResetBtn" type="Button" parent="GolfHUD/StatsPanel"]
+layout_mode = 2
+text = "Reset Ball"
+
+[node name="ExitGolfBtn" type="Button" parent="GolfHUD/StatsPanel"]
+layout_mode = 2
+text = "Exit Golf Mode"
+
+[node name="ToggleWindBtn" type="Button" parent="GolfHUD/StatsPanel"]
+layout_mode = 2
+text = "Wind: ON"
+
+[node name="PowerOverrideSpin" type="SpinBox" parent="GolfHUD/StatsPanel"]
+layout_mode = 2
+min_value = 4.0
+max_value = 9.0
+step = 0.1
+value = 4.0
+alignment = 1
+
+[node name="SpeedLabel" type="Label" parent="GolfHUD/StatsPanel"]
+layout_mode = 2
+text = "Speed: 0.0 m/s"
+
+[node name="DistanceLabel" type="Label" parent="GolfHUD/StatsPanel"]
+layout_mode = 2
+text = "Carry: 0.0y"
+
+[node name="TotalLabel" type="Label" parent="GolfHUD/StatsPanel"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 20
+text = "Total: 0.0y"
+
+[node name="BuildHUD" type="VBoxContainer" parent="."]
 visible = false
 anchors_preset = 5
 anchor_left = 0.5
 anchor_right = 0.5
-offset_left = -90.0
-offset_top = 20.0
-offset_right = 90.0
-offset_bottom = 300.0
+offset_left = -100.0
+offset_top = 50.0
+offset_right = 100.0
+offset_bottom = 400.0
 grow_horizontal = 2
-mouse_filter = 2
-
+script = ExtResource("3_build")

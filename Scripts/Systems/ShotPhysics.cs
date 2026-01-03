@@ -29,11 +29,20 @@ public static class ShotPhysics
         float powerToUse = (p.PowerOverride > 0) ? p.PowerOverride : p.PlayerStats.Power;
         float powerStatMult = powerToUse / 10.0f;
         float baseVelocity = 82.0f;
-        float normalizedPower = p.PowerValue / 90.0f;
-
+        float normalizedPower = p.PowerValue / 94.0f;
         float launchPower = normalizedPower * baseVelocity * powerStatMult * p.CurrentLie.PowerEfficiency;
 
         float accuracyError = p.AccuracyValue - 25.0f;
+
+        // Overpower Penalty logic
+        if (p.PowerValue > 94.0f)
+        {
+            float overpowerFactor = 1.0f + (p.PowerValue - 94.0f) * 0.15f; // Exponential-ish multiplier for errors
+            accuracyError *= overpowerFactor;
+            // Also slightly boost launch power but with high variance/risk
+            launchPower *= (1.0f + (p.PowerValue - 94.0f) * 0.01f);
+        }
+
         float controlMult = 1.0f / (p.PlayerStats.Control / 10.0f);
         float shapingSpin = accuracyError * 35.0f * controlMult;
         if (!p.IsRightHanded) shapingSpin *= -1;

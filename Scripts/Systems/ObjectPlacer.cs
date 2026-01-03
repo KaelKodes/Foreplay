@@ -186,7 +186,9 @@ public partial class ObjectPlacer : Node
             }
             else if (mb.ButtonIndex == MouseButton.WheelUp)
             {
-                if (mb.ShiftPressed)
+                if (mb.CtrlPressed)
+                    _currentObject.Scale *= 1.1f;
+                else if (mb.ShiftPressed)
                     _currentHeightOffset += 0.1f;
                 else
                     _currentRotationY += Mathf.DegToRad(15.0f);
@@ -195,7 +197,9 @@ public partial class ObjectPlacer : Node
             }
             else if (mb.ButtonIndex == MouseButton.WheelDown)
             {
-                if (mb.ShiftPressed)
+                if (mb.CtrlPressed)
+                    _currentObject.Scale *= 0.9f;
+                else if (mb.ShiftPressed)
                     _currentHeightOffset -= 0.1f;
                 else
                     _currentRotationY -= Mathf.DegToRad(15.0f);

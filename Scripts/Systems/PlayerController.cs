@@ -46,6 +46,7 @@ public partial class PlayerController : CharacterBody3D
     private GolfCart _currentCart;
     private InteractableObject _selectedObject;
     public InteractableObject SelectedObject => _selectedObject;
+    private InteractableObject _lastHoveredObject;
     private MainHUDController _hud;
 
     public override void _Ready()
@@ -342,6 +343,16 @@ public partial class PlayerController : CharacterBody3D
 
         // Selection feedback (Highlight on hover)
         InteractableObject hoverObj = CheckInteractableRaycast();
+
+        if (hoverObj != _lastHoveredObject)
+        {
+            if (_lastHoveredObject != null && _lastHoveredObject != _selectedObject)
+            {
+                _lastHoveredObject.OnHover(false);
+            }
+            _lastHoveredObject = hoverObj;
+        }
+
         if (hoverObj != null && hoverObj != _selectedObject)
         {
             hoverObj.OnHover(true);
@@ -476,16 +487,58 @@ public partial class PlayerController : CharacterBody3D
             }
         }
         // Selection logic in Build Mode
-        if (CurrentState == PlayerState.BuildMode && @event is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
+        if (CurrentState == PlayerState.BuildMode)
         {
-            if (_hud == null || _hud.CurrentTool == MainHUDController.BuildTool.Selection)
+            // Mouse Wheel actions
+            if (_selectedObject != null && @event is InputEventMouseButton mbScroll && mbScroll.Pressed)
             {
-                InteractableObject clickedObj = CheckInteractableRaycast();
-                if (clickedObj != _selectedObject)
+                bool isShift = mbScroll.ShiftPressed;
+                bool isCtrl = mbScroll.CtrlPressed;
+
+                if (mbScroll.ButtonIndex == MouseButton.WheelUp)
                 {
-                    if (_selectedObject != null) _selectedObject.SetSelected(false);
-                    _selectedObject = clickedObj;
-                    if (_selectedObject != null) _selectedObject.SetSelected(true);
+                    if (isCtrl)
+                        _selectedObject.Scale *= 1.1f;
+                    else if (isShift)
+                        _selectedObject.GlobalPosition += new Vector3(0, 0.25f, 0);
+                    else
+                        _selectedObject.RotateY(Mathf.DegToRad(15.0f));
+
+                    GetViewport().SetInputAsHandled();
+                }
+                else if (mbScroll.ButtonIndex == MouseButton.WheelDown)
+                {
+                    if (isCtrl)
+                        _selectedObject.Scale *= 0.9f;
+                    else if (isShift)
+                        _selectedObject.GlobalPosition -= new Vector3(0, 0.25f, 0);
+                    else
+                        _selectedObject.RotateY(Mathf.DegToRad(-15.0f));
+
+                    GetViewport().SetInputAsHandled();
+                }
+            }
+
+            // Mouse Drag Rotation
+            if (_selectedObject != null && @event is InputEventMouseMotion mm && Input.IsMouseButtonPressed(MouseButton.Left))
+            {
+                // Rotate around Y axis based on horizontal mouse movement
+                float rotSpeed = 0.5f;
+                _selectedObject.RotateY(Mathf.DegToRad(mm.Relative.X * rotSpeed));
+            }
+
+            // Select on Click
+            if (@event is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
+            {
+                if (_hud == null || _hud.CurrentTool == MainHUDController.BuildTool.Selection)
+                {
+                    InteractableObject clickedObj = CheckInteractableRaycast();
+                    if (clickedObj != _selectedObject)
+                    {
+                        if (_selectedObject != null) _selectedObject.SetSelected(false);
+                        _selectedObject = clickedObj;
+                        if (_selectedObject != null) _selectedObject.SetSelected(true);
+                    }
                 }
             }
         }

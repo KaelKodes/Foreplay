@@ -58,6 +58,7 @@ public partial class SwingSystem : Node
 	[Signal] public delegate void ClubChangedEventHandler(string clubName, float loft, float aoa);
 
 	public Vector3 BallPosition => _ball?.GlobalPosition ?? Vector3.Zero;
+	public BallLie GetCurrentLie() => _lieSystem?.GetCurrentLie(BallPosition) ?? new BallLie();
 	public SwingStage CurrentStage => _stage;
 	public List<MeshInstance3D> GhostMarkers => _markerManager.GhostMarkers;
 	public Vector3 TeePosition { get; private set; } = new Vector3(49.51819f, 0.0f, -59.909077f); // Default to TerrainTest tee
@@ -126,22 +127,23 @@ public partial class SwingSystem : Node
 		PlayerClubSet = new GolfClubSet();
 		PlayerClubSet.ClubSetName = "Beginner Set";
 
-		// Beginner Bag - Recalibrated for 1:2 HUD Ratio (1m = 2y)
-		// name, type, loft, powerMult, forgiveness (1.0 = standard, 1.5 = high MOI)
-		AddClub("Driver", ClubType.Driver, 11.5f, 1.0f, 1.5f);        // Baseline: ~105m -> 210y
-		AddClub("3 Wood", ClubType.Wood, 15.5f, 0.92f, 1.4f);        // ~190y
-		AddClub("4 Hybrid", ClubType.Hybrid, 23.0f, 0.85f, 1.8f);    // ~168y
-		AddClub("5 Hybrid", ClubType.Hybrid, 26.0f, 0.82f, 1.8f);    // ~158y
-		AddClub("6 Iron", ClubType.Iron, 29.0f, 0.77f, 1.3f);        // ~145y
-		AddClub("7 Iron", ClubType.Iron, 33.0f, 0.72f, 1.3f);        // ~130y
-		AddClub("8 Iron", ClubType.Iron, 37.0f, 0.67f, 1.3f);        // ~115y
-		AddClub("9 Iron", ClubType.Iron, 41.0f, 0.62f, 1.3f);        // ~100y
-		AddClub("PW", ClubType.Wedge, 45.0f, 0.58f, 1.2f);           // ~92y
-		AddClub("SW", ClubType.Wedge, 55.0f, 0.50f, 1.5f);           // ~67y
-		AddClub("Putter", ClubType.Putter, 4.0f, 0.15f, 2.0f);
+		// Beginner Bag - Recalibrated for Realism and 1:2 HUD Ratio
+		// name, type, loft, smashFactor, forgiveness, spinMult, speedMult
+		AddClub("Driver", ClubType.Driver, 9.5f, 1.50f, 1.5f, 0.65f, 1.00f);      // Full speed
+		AddClub("3 Wood", ClubType.Wood, 15.0f, 1.48f, 1.4f, 0.95f, 0.96f);
+		AddClub("5 Wood", ClubType.Wood, 18.5f, 1.45f, 1.4f, 1.15f, 0.94f);
+		AddClub("4 Hybrid", ClubType.Hybrid, 22.0f, 1.42f, 1.8f, 1.30f, 0.90f);
+		AddClub("5 Iron", ClubType.Iron, 26.0f, 1.38f, 1.3f, 1.60f, 0.86f);
+		AddClub("6 Iron", ClubType.Iron, 30.0f, 1.35f, 1.3f, 1.80f, 0.84f);
+		AddClub("7 Iron", ClubType.Iron, 34.0f, 1.32f, 1.3f, 2.00f, 0.82f);
+		AddClub("8 Iron", ClubType.Iron, 38.0f, 1.28f, 1.3f, 2.20f, 0.80f);
+		AddClub("9 Iron", ClubType.Iron, 42.0f, 1.24f, 1.3f, 2.40f, 0.78f);
+		AddClub("PW", ClubType.Wedge, 46.0f, 1.20f, 1.2f, 2.70f, 0.74f);
+		AddClub("SW", ClubType.Wedge, 56.0f, 1.15f, 1.5f, 3.20f, 0.70f);
+		AddClub("Putter", ClubType.Putter, 4.0f, 1.00f, 2.0f, 0.10f, 0.35f);
 	}
 
-	private void AddClub(string name, ClubType type, float loft, float power, float forgiveness = 1.0f)
+	private void AddClub(string name, ClubType type, float loft, float power, float forgiveness = 1.0f, float spinMult = 1.0f, float speedMult = 1.0f)
 	{
 		var club = new GolfClub();
 		club.ClubName = name;
@@ -149,6 +151,8 @@ public partial class SwingSystem : Node
 		club.LoftDegrees = loft;
 		club.PowerMultiplier = power;
 		club.SweetSpotSize = forgiveness;
+		club.SpinMultiplier = spinMult;
+		club.HeadSpeedMultiplier = speedMult;
 		PlayerClubSet.Clubs.Add(club);
 	}
 
@@ -431,13 +435,13 @@ public partial class SwingSystem : Node
 		TeePosition = newPos;
 
 		// If we haven't started playing (Stroke 1), snap everything to the tee immediately.
-		// This fixes the "Launch from nowhere" bug on scene load.
-		if (_strokeCount == 1 && _stage == SwingStage.Idle && _ball != null)
-		{
-			_ball.Reset(); // Stop physics
-			_ball.GlobalPosition = TeePosition + new Vector3(0, 0.2f, 0);
-			_markerManager.UpdateBallIndicator(false, Vector3.Zero, 0);
-			SetPlayerStance();
-		}
-	}
+        // This fixes the "Launch from nowhere" bug on scene load.
+        if (_strokeCount == 1 && _stage == SwingStage.Idle && _ball != null)
+        {
+            _ball.Reset(); // Stop physics
+            _ball.GlobalPosition = TeePosition + new Vector3(0, 0.2f, 0);
+            _markerManager.UpdateBallIndicator(false, Vector3.Zero, 0);
+            SetPlayerStance();
+        }
+    }
 }

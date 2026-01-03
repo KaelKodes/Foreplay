@@ -14,13 +14,13 @@ public partial class BallController : RigidBody3D
     // Multiplayer Ownership (0 = Server/Unassigned, >0 = PeerID)
     public int OwnerId { get; set; } = 0;
 
-    [Export] public float DragCoefficient = 0.18f; // Increased for better wind interaction
-    [Export] public float LiftCoefficient = 0.15f; // Reduced to balance against wind
-    [Export] public float AirDensity = 1.225f;
-    [Export] public float BallArea = 0.001432f;
-    [Export] public float BallRadius = 0.021f;
-    [Export] public float BallMass = 0.045f;
-    [Export] public float WindMultiplier = 1.0f; // Reset to 1.0 baseline with realistic drag
+    [Export] public float DragCoefficient = Golf.GolfConstants.DRAG_COEFFICIENT;
+    [Export] public float LiftCoefficient = Golf.GolfConstants.LIFT_COEFFICIENT;
+    [Export] public float AirDensity = Golf.GolfConstants.AIR_DENSITY;
+    [Export] public float BallArea = Golf.GolfConstants.BALL_AREA;
+    [Export] public float BallRadius = Golf.GolfConstants.BALL_RADIUS;
+    [Export] public float BallMass = Golf.GolfConstants.BALL_MASS;
+    [Export] public float WindMultiplier = 1.0f;
 
     // ...
 

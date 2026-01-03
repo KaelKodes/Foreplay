@@ -464,6 +464,17 @@ public partial class PlayerController : CharacterBody3D
             }
         }
 
+        if (@event is InputEventKey homeKey && homeKey.Pressed && !homeKey.Echo && homeKey.Keycode == Key.Home)
+        {
+            if (_swingSystem != null)
+            {
+                Vector3 teePos = _swingSystem.TeePosition;
+                // Teleport slightly behind and above the tee
+                Vector3 offset = new Vector3(0, 0, -1.0f); // Face down-range (+Z)
+                TeleportTo(teePos + offset, teePos + Vector3.Forward * 10.0f);
+                GD.Print("PlayerController: Home teleport to Tee.");
+            }
+        }
         // Selection logic in Build Mode
         if (CurrentState == PlayerState.BuildMode && @event is InputEventMouseButton mb && mb.Pressed && mb.ButtonIndex == MouseButton.Left)
         {

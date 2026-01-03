@@ -14,6 +14,8 @@ public partial class BuildHUDController : Control
     private Button _lowerBtn;
     private HBoxContainer _fillPanel;
     private SpinBox _fillSlider;
+    private HBoxContainer _smoothingPanel;
+    private SpinBox _smoothingSlider;
 
     public override void _Ready()
     {
@@ -65,6 +67,24 @@ public partial class BuildHUDController : Control
         _fillPanel.AddChild(new Label { Text = "Fill %: " });
         _fillPanel.AddChild(_fillSlider);
 
+        _smoothingPanel = new HBoxContainer();
+        _smoothingPanel.Visible = false;
+        _smoothingPanel.Alignment = BoxContainer.AlignmentMode.Center;
+        AddChild(_smoothingPanel);
+
+        _smoothingSlider = new SpinBox();
+        _smoothingSlider.MinValue = 0;
+        _smoothingSlider.MaxValue = 4;
+        _smoothingSlider.Value = 0;
+        _smoothingSlider.ValueChanged += (val) => { if (_swingSystem?.BuildManager != null) _swingSystem.BuildManager.SmoothingIterations = (int)val; };
+        _smoothingPanel.AddChild(new Label { Text = "Smoothing: " });
+        _smoothingPanel.AddChild(_smoothingSlider);
+
+        if (_swingSystem?.BuildManager != null)
+        {
+            _swingSystem.BuildManager.Connect(BuildManager.SignalName.SurveyUpdated, new Callable(this, MethodName.UpdateSurveyButton));
+        }
+
         ResetUI();
     }
 
@@ -86,23 +106,64 @@ public partial class BuildHUDController : Control
 
     public void ResetUI()
     {
-        _surveyDoneBtn.Show();
+        UpdateSurveyButton(_swingSystem?.BuildManager?.PointCount ?? 0);
         _terrainPicker.Hide();
         _surveyConfirmBtn.Hide();
         _raiseBtn.Hide();
         _lowerBtn.Hide();
         _fillPanel.Hide();
+        _smoothingPanel.Hide();
+    }
+
+    private void UpdateSurveyButton(int pointCount)
+    {
+        if (_swingSystem?.BuildManager == null) return;
+
+        _surveyDoneBtn.Show();
+        _surveyDoneBtn.Modulate = Colors.White;
+
+        bool isPicking = _swingSystem.BuildManager.IsPickingTerrain;
+
+        if (isPicking)
+        {
+            _surveyDoneBtn.Text = "RESET SHAPE";
+            _surveyDoneBtn.Modulate = Colors.Salmon;
+            _surveyDoneBtn.Disabled = false;
+        }
+        else if (pointCount < 3)
+        {
+            _surveyDoneBtn.Text = "PLACE MORE NODES!";
+            _surveyDoneBtn.Modulate = new Color(1, 1, 1, 0.5f);
+            _surveyDoneBtn.Disabled = true;
+        }
+        else
+        {
+            _surveyDoneBtn.Text = "FINISH SHAPE";
+            _surveyDoneBtn.Modulate = Colors.White;
+            _surveyDoneBtn.Disabled = false;
+        }
     }
 
     private void OnSurveyDonePressed()
     {
         if (_swingSystem?.BuildManager == null) return;
-        _surveyDoneBtn.Hide();
+
+        if (_swingSystem.BuildManager.IsPickingTerrain)
+        {
+            // This is now a RESET button in this state
+            _swingSystem.BuildManager.ClearSurvey();
+            ResetUI();
+            return;
+        }
+
+        // Otherwise it's the FINISH SHAPE button
         _terrainPicker.Show();
         _surveyConfirmBtn.Show();
         _raiseBtn.Show();
         _lowerBtn.Show();
+        _smoothingPanel.Show();
         UpdatePreview();
+        UpdateSurveyButton(_swingSystem.BuildManager.PointCount);
     }
 
     private void UpdatePreview()
@@ -113,6 +174,10 @@ public partial class BuildHUDController : Control
 
         bool isHole = _swingSystem.BuildManager.CurrentElevation < 0;
         _fillPanel.Visible = isHole && (type == 4 || type == 5);
+        _smoothingPanel.Show();
+
+        // Reset smoothing slider if manager was reset
+        _smoothingSlider.Value = _swingSystem.BuildManager.SmoothingIterations;
     }
 
     private void OnConfirmPressed()

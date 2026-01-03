@@ -41,11 +41,10 @@ public partial class ObjectPlacer : Node
         }
     }
 
-    public void SpawnAndPlace(PackedScene scene)
+    public void SpawnAndPlace(InteractableObject obj)
     {
-        if (scene == null) return;
-        var obj = scene.Instantiate<InteractableObject>();
-        GetTree().CurrentScene.AddChild(obj);
+        if (obj == null) return;
+        if (obj.GetParent() == null) GetTree().CurrentScene.AddChild(obj);
 
         StartPlacing(obj);
         _isNewObject = true;
@@ -62,7 +61,30 @@ public partial class ObjectPlacer : Node
     {
         if (_currentObject == null) return;
 
-        GD.Print($"ObjectPlacer: Placed {_currentObject.Name} at {_currentObject.GlobalPosition}");
+        // Enforce Single-Instance Rule for Tee and Pin
+        bool isTee = _currentObject.ObjectName.Contains("Tee");
+        bool isPin = _currentObject.ObjectName.Contains("Pin") || _currentObject.ObjectName.Contains("Flag");
+
+        if (isTee || isPin)
+        {
+            string group = isTee ? "tees" : "pins";
+            var existing = GetTree().GetNodesInGroup(group);
+            foreach (Node node in existing)
+            {
+                if (node != _currentObject && IsInstanceValid(node))
+                {
+                    node.QueueFree();
+                }
+            }
+            _currentObject.AddToGroup(group);
+            _currentObject.AddToGroup("targets"); // Ensure distance markers can track it
+
+            // Update SwingSystem
+            if (isTee) _swingSystem?.UpdateTeePosition(_currentObject.GlobalPosition);
+            if (isPin) _swingSystem?.UpdatePinPosition(_currentObject.GlobalPosition);
+        }
+
+        GD.Print($"ObjectPlacer: Placed {_currentObject.ObjectName} at {_currentObject.GlobalPosition}");
         _currentObject = null;
         _isNewObject = false;
 

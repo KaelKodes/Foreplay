@@ -7,10 +7,18 @@ public partial class BuildManager : Node3D
     private List<Node3D> _markers = new List<Node3D>();
     private ImmediateMesh _lineMesh;
     private MeshInstance3D _lineInstance;
+    [Signal] public delegate void SurveyUpdatedEventHandler(int pointCount);
+    public int PointCount => _points.Count;
     private CsgPolygon3D _previewMeshInstance;
 
     public float CurrentElevation { get; private set; } = 0.0f;
     private float _fillPercentage = 80.0f;
+    private int _smoothingIterations = 0;
+    public int SmoothingIterations
+    {
+        get => _smoothingIterations;
+        set { _smoothingIterations = value; SetPreviewTerrain(_lastSelectedType); }
+    }
 
     private CsgCombiner3D _csgRoot = null;
 
@@ -53,6 +61,7 @@ public partial class BuildManager : Node3D
         _points.Add(position);
         CreateMarker(position);
         UpdateLines();
+        EmitSignal(SignalName.SurveyUpdated, _points.Count);
     }
 
     private void CreateMarker(Vector3 position)
@@ -288,6 +297,7 @@ public partial class BuildManager : Node3D
         _markers.RemoveAt(index);
         UpdateMarkerLabels();
         UpdateLines();
+        EmitSignal(SignalName.SurveyUpdated, _points.Count);
     }
 
     public void ClearSurvey()
@@ -296,17 +306,48 @@ public partial class BuildManager : Node3D
         foreach (var m in _markers) m.QueueFree();
         _markers.Clear();
         _lineMesh.ClearSurfaces();
+        EmitSignal(SignalName.SurveyUpdated, 0);
         if (_previewMeshInstance != null) _previewMeshInstance.QueueFree();
         _previewMeshInstance = null;
         IsPickingTerrain = false;
         CurrentElevation = 0.0f;
+        _smoothingIterations = 0;
+    }
+
+    public List<Vector3> GetSmoothedPoints()
+    {
+        if (_smoothingIterations <= 0 || _points.Count < 3) return new List<Vector3>(_points);
+
+        List<Vector3> currentPoints = new List<Vector3>(_points);
+
+        for (int iter = 0; iter < _smoothingIterations; iter++)
+        {
+            List<Vector3> nextPoints = new List<Vector3>();
+            for (int i = 0; i < currentPoints.Count; i++)
+            {
+                Vector3 p0 = currentPoints[i];
+                Vector3 p1 = currentPoints[(i + 1) % currentPoints.Count];
+
+                Vector3 q = p0.Lerp(p1, 0.25f);
+                Vector3 r = p0.Lerp(p1, 0.75f);
+
+                nextPoints.Add(q);
+                nextPoints.Add(r);
+            }
+            currentPoints = nextPoints;
+        }
+
+        return currentPoints;
     }
 
     public void SetPreviewTerrain(int terrainType)
     {
         if (terrainType < 0) terrainType = 0;
         _lastSelectedType = terrainType;
-        if (_points.Count < 3) return;
+
+        var pointsToUse = GetSmoothedPoints();
+
+        if (pointsToUse.Count < 3) return;
 
         if (_previewMeshInstance == null)
         {
@@ -321,13 +362,13 @@ public partial class BuildManager : Node3D
         UpdateLines();
 
         Vector3 centroid = Vector3.Zero;
-        foreach (var p in _points) centroid += p;
-        centroid /= _points.Count;
+        foreach (var p in pointsToUse) centroid += p;
+        centroid /= pointsToUse.Count;
 
-        Vector2[] poly = new Vector2[_points.Count];
-        for (int i = 0; i < _points.Count; i++)
+        Vector2[] poly = new Vector2[pointsToUse.Count];
+        for (int i = 0; i < pointsToUse.Count; i++)
         {
-            poly[i] = new Vector2(_points[i].X - centroid.X, _points[i].Z - centroid.Z);
+            poly[i] = new Vector2(pointsToUse[i].X - centroid.X, pointsToUse[i].Z - centroid.Z);
         }
 
         _previewMeshInstance.Polygon = poly;
@@ -366,7 +407,9 @@ public partial class BuildManager : Node3D
     public void BakeTerrain(int terrainType)
     {
         if (terrainType < 0) terrainType = 0;
-        if (_points.Count < 3) return;
+
+        var pointsToUse = GetSmoothedPoints();
+        if (pointsToUse.Count < 3) return;
 
         var heightmap = GetTree().CurrentScene.GetNodeOrNull<HeightmapTerrain>("HeightmapTerrain");
         if (heightmap == null)
@@ -381,7 +424,7 @@ public partial class BuildManager : Node3D
         if (heightmap != null)
         {
             float heightDelta = CurrentElevation;
-            heightmap.DeformArea(_points.ToArray(), heightDelta, terrainType);
+            heightmap.DeformArea(pointsToUse.ToArray(), heightDelta, terrainType);
             CurrentElevation = 0.0f;
             ClearSurvey();
             return;
@@ -391,16 +434,16 @@ public partial class BuildManager : Node3D
 
         var bakedNode = new SurveyedTerrain();
         bakedNode.Name = $"Terrain_{terrainType}_{Time.GetTicksMsec()}";
-        bakedNode.Points = _points.ToArray();
+        bakedNode.Points = pointsToUse.ToArray();
         bakedNode.TerrainType = terrainType;
 
         Vector3 centroid = Vector3.Zero;
-        foreach (var p in _points) centroid += p;
-        centroid /= _points.Count;
+        foreach (var p in pointsToUse) centroid += p;
+        centroid /= pointsToUse.Count;
 
-        Vector2[] localPoly = new Vector2[_points.Count];
-        for (int i = 0; i < _points.Count; i++)
-            localPoly[i] = new Vector2(_points[i].X - centroid.X, _points[i].Z - centroid.Z);
+        Vector2[] localPoly = new Vector2[pointsToUse.Count];
+        for (int i = 0; i < pointsToUse.Count; i++)
+            localPoly[i] = new Vector2(pointsToUse[i].X - centroid.X, pointsToUse[i].Z - centroid.Z);
 
         bakedNode.Polygon = localPoly;
         bakedNode.UseCollision = true;
@@ -439,7 +482,7 @@ public partial class BuildManager : Node3D
             {
                 var filler = new SurveyedTerrain();
                 filler.Name = $"{bakedNode.Name}_Filler";
-                filler.Points = _points.ToArray();
+                filler.Points = pointsToUse.ToArray();
                 filler.TerrainType = terrainType;
                 filler.Polygon = localPoly;
                 filler.Operation = CsgShape3D.OperationEnum.Union;

@@ -205,7 +205,7 @@ anchor_bottom = 1.0
 offset_left = 469.0
 offset_right = 471.0
 grow_vertical = 2
-color = Color(0, 0, 0, 0.4)
+color = Color(0.9209637, 0.9519629, 0.6484697, 0.4)
 
 [node name="AccuracyMarker" type="ColorRect" parent="GolfHUD/SwingContainer"]
 layout_mode = 1

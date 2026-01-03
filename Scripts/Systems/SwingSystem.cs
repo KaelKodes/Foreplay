@@ -110,6 +110,18 @@ public partial class SwingSystem : Node
 		CallDeferred(MethodName.ExitGolfMode);
 	}
 
+	public void UpdateTeePosition(Vector3 pos)
+	{
+		TeePosition = pos;
+		GD.Print($"SwingSystem: TeePosition updated to {pos}");
+	}
+
+	public void UpdatePinPosition(Vector3 pos)
+	{
+		_targetPosition = pos;
+		GD.Print($"SwingSystem: PinPosition updated to {pos}");
+	}
+
 	public void RegisterPlayer(PlayerController player)
 	{
 		_currentPlayer = player;
